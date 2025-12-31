@@ -55,6 +55,7 @@ Required:
 
 Optional:
 - `DEBUG` - Enable debug mode for `/diag` command
+- `LOGFIRE_TOKEN` - Logfire write token for production (get from logfire.pydantic.dev)
 - `LOGFIRE_ENVIRONMENT` - Logfire environment name (default: `development`)
 
 ## Code Style

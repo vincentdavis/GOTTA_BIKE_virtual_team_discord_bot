@@ -9,9 +9,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure logfire for observability
+# LOGFIRE_TOKEN is required in production; if not set, disable sending to logfire
+logfire_token = os.getenv("LOGFIRE_TOKEN")
 logfire.configure(
     service_name="race-ready-zwift-bot",
     environment=os.getenv("LOGFIRE_ENVIRONMENT", "development"),
+    token=logfire_token,
+    send_to_logfire="if-token-present",
 )
 
 TOKEN = os.getenv("DISCORD_TOKEN")
