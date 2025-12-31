@@ -1,5 +1,5 @@
 [project]
-name = "GOTTA.BIKE Virtual Team Dicord bot"
+name = "GOTTA BIKE Virtual Team Dicord bot"
 version = "0.1.0"
 description = "Manage your zwift team on discord. and orginize your racing"
 requires-python = ">=3.14"

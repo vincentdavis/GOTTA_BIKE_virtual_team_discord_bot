@@ -10,7 +10,7 @@ load_dotenv()
 
 # Configure logfire for observability
 logfire.configure(
-    service_name="race-ready-zwift-bot",
+    service_name="coalition-bot",
     environment=os.getenv("LOGFIRE_ENVIRONMENT", "development"),
 )
 
