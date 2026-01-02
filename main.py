@@ -29,6 +29,7 @@ COGS = [
     "src.cogs.diagnostics",
     "src.cogs.team_links",
     "src.cogs.role_sync",
+    "src.cogs.member_sync",
     "src.cogs.zwiftpower",
 ]
 
