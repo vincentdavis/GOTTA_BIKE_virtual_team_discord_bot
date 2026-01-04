@@ -8,7 +8,8 @@ A Discord bot for managing Zwift racing teams. Built with [py-cord](https://docs
 
 | Command | Description | Permissions |
 |---------|-------------|-------------|
-| `/help` | Get philosophical wisdom about Zwift racing | Everyone |
+| `/help` | Get philosophical wisdom about Zwift racing | Team Member |
+| `/create_account` | Get the link to create a team account | Everyone |
 | `/team_links` | Generate a magic link to access the team links page | Everyone |
 | `/my_profile` | View your ZwiftPower and Zwift Racing profile | Everyone |
 | `/teammate_profile` | Search and view a teammate's profile | Everyone |
@@ -77,6 +78,7 @@ docker run --env-file .env coalition-bot
 | `DISCORD_TOKEN` | Yes | Bot token from Discord Developer Portal | - |
 | `DBOT_API_URL` | Yes | Django API endpoint | `http://localhost:8000/api/dbot` |
 | `DBOT_AUTH_KEY` | Yes | API authentication key | - |
+| `APP_LOGIN_URL` | Yes | URL to the app login/signup page | - |
 | `DISCORD_GUILD_ID` | Yes | Target guild ID for commands | - |
 | `TEAM_MEMBER_ROLE_ID` | Yes | Role ID required for non-admin commands | - |
 | `DEBUG` | No | Enable debug mode for `/diag` command | `false` |

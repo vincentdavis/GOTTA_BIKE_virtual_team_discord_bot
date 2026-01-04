@@ -155,6 +155,32 @@ class MemberSync(commands.Cog):
         else:
             await ctx.edit(content="Member sync failed. Check bot logs for details.")
 
+    async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
+        """Handle errors for commands in this cog.
+
+        Args:
+            ctx: The application context.
+            error: The error that occurred.
+
+        """
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.respond(
+                "You don't have permission to use this command. Administrator access required.",
+                ephemeral=True,
+            )
+        elif isinstance(error, commands.CheckFailure):
+            await ctx.respond(
+                "You don't have permission to use this command.",
+                ephemeral=True,
+            )
+        else:
+            logfire.error(
+                "Command error in MemberSync cog",
+                error=str(error),
+                command=ctx.command.name if ctx.command else "unknown",
+            )
+            raise error
+
 
 def setup(bot: commands.Bot):
     """Set up the MemberSync cog.

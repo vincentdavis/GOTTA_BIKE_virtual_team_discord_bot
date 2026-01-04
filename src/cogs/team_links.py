@@ -4,6 +4,7 @@ import os
 
 import discord
 import httpx
+import logfire
 from discord.ext import commands
 
 
@@ -95,6 +96,18 @@ class TeamLinks(commands.Cog):
                 f"Failed to connect to the API: {e}",
                 ephemeral=True,
             )
+
+    async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
+        """Handle errors for commands in this cog."""
+        if isinstance(error, commands.CheckFailure):
+            await ctx.respond("You don't have permission to use this command.", ephemeral=True)
+        else:
+            logfire.error(
+                "Command error in TeamLinks cog",
+                error=str(error),
+                command=ctx.command.name if ctx.command else "unknown",
+            )
+            raise error
 
 
 def setup(bot: commands.Bot):

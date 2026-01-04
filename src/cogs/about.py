@@ -3,6 +3,7 @@
 import os
 
 import discord
+import logfire
 from discord.ext import commands
 
 
@@ -12,6 +13,7 @@ class About(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+        self.app_login_url = os.getenv("APP_LOGIN_URL", "")
 
     def _has_team_member_role(self, member: discord.Member) -> bool:
         """Check if member has the team_member role.
@@ -38,6 +40,33 @@ class About(commands.Cog):
             "between ego and algorithm — where watts become wisdom, suffering becomes synergy, "
             "and every virtual climb mirrors the uphill struggles of our digitized humanity."
         )
+
+    @discord.slash_command(name="create_account", description="Get the link to create a team account")
+    async def create_account(self, ctx: discord.ApplicationContext):
+        """Return the app login URL for creating an account."""
+        if not self.app_login_url:
+            await ctx.respond(
+                "App login URL is not configured. Please contact an administrator.",
+                ephemeral=True,
+            )
+            return
+
+        await ctx.respond(
+            f"Create your team account here:\n{self.app_login_url}",
+            ephemeral=True,
+        )
+
+    async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
+        """Handle errors for commands in this cog."""
+        if isinstance(error, commands.CheckFailure):
+            await ctx.respond("You don't have permission to use this command.", ephemeral=True)
+        else:
+            logfire.error(
+                "Command error in About cog",
+                error=str(error),
+                command=ctx.command.name if ctx.command else "unknown",
+            )
+            raise error
 
 
 def setup(bot: commands.Bot):
