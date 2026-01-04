@@ -109,7 +109,11 @@ class MemberSync(commands.Cog):
             logfire.error("Guild member sync request failed", error=str(e))
             return None
 
-    @discord.slash_command(name="sync_members", description="Sync all guild members to the database")
+    @discord.slash_command(
+        name="sync_members",
+        description="Sync all guild members to the database",
+        default_member_permissions=discord.Permissions(administrator=True),
+    )
     @commands.has_permissions(administrator=True)
     async def sync_members_command(self, ctx: discord.ApplicationContext):
         """Sync all guild members to Django database (admin only).

@@ -9,6 +9,46 @@ import logfire
 from discord.ext import commands
 
 
+async def apply_race_ready_role(member: discord.Member, is_race_ready: bool, role_id: str | None) -> bool:
+    """Add or remove race ready role based on verification status.
+
+    Args:
+        member: The Discord member to update.
+        is_race_ready: Whether the user is race ready.
+        role_id: The role ID to add/remove (None or "0" means disabled).
+
+    Returns:
+        True if a role change was made, False otherwise.
+
+    """
+    if not role_id or role_id == "0":
+        return False  # Feature disabled
+
+    guild = member.guild
+    role = guild.get_role(int(role_id))
+    if not role:
+        logfire.warning("Race ready role not found", role_id=role_id)
+        return False
+
+    has_role = role in member.roles
+
+    try:
+        if is_race_ready and not has_role:
+            await member.add_roles(role, reason="Race Ready verification complete")
+            logfire.info("Added race ready role", member=member.display_name, role=role.name)
+            return True
+        elif not is_race_ready and has_role:
+            await member.remove_roles(role, reason="Race Ready verification expired or invalid")
+            logfire.info("Removed race ready role", member=member.display_name, role=role.name)
+            return True
+    except discord.Forbidden:
+        logfire.error("Missing permissions to manage race ready role", role=role.name)
+    except discord.HTTPException as e:
+        logfire.error("Failed to update race ready role", error=str(e))
+
+    return False
+
+
 class ZwiftPower(commands.Cog):
     """Cog for ZwiftPower commands."""
 
@@ -50,7 +90,11 @@ class ZwiftPower(commands.Cog):
             "X-Discord-User-Id": user_id,
         }
 
-    @discord.slash_command(name="update_zp_team", description="Update team roster from ZwiftPower")
+    @discord.slash_command(
+        name="update_zp_team",
+        description="Update team roster from ZwiftPower",
+        default_member_permissions=discord.Permissions(administrator=True),
+    )
     @commands.has_permissions(administrator=True)
     async def update_zp_team(self, ctx: discord.ApplicationContext):
         """Trigger ZwiftPower team roster update (admin only)."""
@@ -109,7 +153,11 @@ class ZwiftPower(commands.Cog):
                 ephemeral=True,
             )
 
-    @discord.slash_command(name="update_zp_results", description="Update team results from ZwiftPower")
+    @discord.slash_command(
+        name="update_zp_results",
+        description="Update team results from ZwiftPower",
+        default_member_permissions=discord.Permissions(administrator=True),
+    )
     @commands.has_permissions(administrator=True)
     async def update_zp_results(self, ctx: discord.ApplicationContext):
         """Trigger ZwiftPower team results update (admin only)."""
@@ -198,6 +246,14 @@ class ZwiftPower(commands.Cog):
                     data = response.json()
                     embed = self._build_profile_embed(data, member)
                     await ctx.respond(embed=embed, ephemeral=True)
+
+                    # Apply race ready role based on verification status
+                    if data.get("race_ready_role_id"):
+                        await apply_race_ready_role(
+                            member=member,
+                            is_race_ready=data.get("is_race_ready", False),
+                            role_id=data.get("race_ready_role_id"),
+                        )
                 elif response.status_code == 404:
                     error_data = response.json()
                     await ctx.respond(

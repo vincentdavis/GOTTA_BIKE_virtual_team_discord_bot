@@ -7,6 +7,8 @@ import httpx
 import logfire
 from discord.ext import commands, tasks
 
+from cogs.zwiftpower import apply_race_ready_role
+
 
 class RoleSync(commands.Cog):
     """Cog for syncing Discord roles to the Django API."""
@@ -127,6 +129,15 @@ class RoleSync(commands.Cog):
                         member_id=member.id,
                         roles_synced=result.get("roles_synced"),
                     )
+
+                    # Apply race ready role based on verification status
+                    if result.get("race_ready_role_id"):
+                        await apply_race_ready_role(
+                            member=member,
+                            is_race_ready=result.get("is_race_ready", False),
+                            role_id=result.get("race_ready_role_id"),
+                        )
+
                     return result
                 elif response.status_code == 404:
                     # User not in database - this is normal for users without accounts
@@ -231,7 +242,11 @@ class RoleSync(commands.Cog):
         """Wait until the bot is ready before starting periodic sync."""
         await self.bot.wait_until_ready()
 
-    @discord.slash_command(name="sync_roles", description="Manually sync all guild roles to the database")
+    @discord.slash_command(
+        name="sync_roles",
+        description="Manually sync all guild roles to the database",
+        default_member_permissions=discord.Permissions(administrator=True),
+    )
     @commands.has_permissions(administrator=True)
     async def sync_roles_command(self, ctx: discord.ApplicationContext):
         """Manually trigger a role sync (admin only)."""
