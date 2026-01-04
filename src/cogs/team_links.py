@@ -14,6 +14,21 @@ class TeamLinks(commands.Cog):
         self.bot = bot
         self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
         self.api_key = os.getenv("DBOT_AUTH_KEY", "")
+        self.team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+
+    def _has_team_member_role(self, member: discord.Member) -> bool:
+        """Check if member has the team_member role.
+
+        Args:
+            member: The Discord member to check.
+
+        Returns:
+            True if member has the role or no role is configured.
+
+        """
+        if not self.team_member_role_id:
+            return True
+        return any(str(role.id) == self.team_member_role_id for role in member.roles)
 
     @discord.slash_command(name="team_links", description="Get a link to the team links page")
     async def team_links(self, ctx: discord.ApplicationContext):
@@ -23,8 +38,12 @@ class TeamLinks(commands.Cog):
         guild = ctx.guild
         member = ctx.author
 
-        if not guild:
+        if not guild or not isinstance(member, discord.Member):
             await ctx.respond("This command can only be used in a server.", ephemeral=True)
+            return
+
+        if not self._has_team_member_role(member):
+            await ctx.respond("You need the Team Member role to use this command.", ephemeral=True)
             return
 
         headers = {

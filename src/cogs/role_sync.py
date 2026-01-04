@@ -24,6 +24,7 @@ class RoleSync(commands.Cog):
         self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
         self.api_key = os.getenv("DBOT_AUTH_KEY", "")
         self.guild_id = os.getenv("DISCORD_GUILD_ID", "")
+        self.team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
 
     def cog_unload(self):
         """Stop background tasks when cog is unloaded."""
@@ -44,6 +45,20 @@ class RoleSync(commands.Cog):
             "X-Guild-Id": self.guild_id,
             "X-Discord-User-Id": user_id or str(self.bot.user.id),
         }
+
+    def _has_team_member_role(self, member: discord.Member) -> bool:
+        """Check if member has the team_member role.
+
+        Args:
+            member: The Discord member to check.
+
+        Returns:
+            True if member has the role or no role is configured.
+
+        """
+        if not self.team_member_role_id:
+            return True
+        return any(str(role.id) == self.team_member_role_id for role in member.roles)
 
     async def _sync_guild_roles(self, guild: discord.Guild) -> dict | None:
         """Sync all roles from a guild to the Django API.
@@ -282,6 +297,10 @@ class RoleSync(commands.Cog):
 
         if not ctx.guild or not isinstance(ctx.author, discord.Member):
             await ctx.respond("This command can only be used in a server.", ephemeral=True)
+            return
+
+        if not self._has_team_member_role(ctx.author):
+            await ctx.respond("You need the Team Member role to use this command.", ephemeral=True)
             return
 
         if str(ctx.guild.id) != self.guild_id:

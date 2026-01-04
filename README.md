@@ -78,6 +78,7 @@ docker run --env-file .env coalition-bot
 | `DBOT_API_URL` | Yes | Django API endpoint | `http://localhost:8000/api/dbot` |
 | `DBOT_AUTH_KEY` | Yes | API authentication key | - |
 | `DISCORD_GUILD_ID` | Yes | Target guild ID for commands | - |
+| `TEAM_MEMBER_ROLE_ID` | Yes | Role ID required for non-admin commands | - |
 | `DEBUG` | No | Enable debug mode for `/diag` command | `false` |
 | `LOGFIRE_ENVIRONMENT` | No | Logfire environment name | `development` |
 
