@@ -7,7 +7,7 @@ import httpx
 import logfire
 from discord.ext import commands, tasks
 
-from cogs.zwiftpower import apply_race_ready_role
+from src.cogs.zwiftpower import apply_race_ready_role
 
 
 class RoleSync(commands.Cog):
