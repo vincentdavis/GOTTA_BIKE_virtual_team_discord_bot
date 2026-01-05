@@ -17,6 +17,7 @@ logfire.configure(
     token=logfire_token,
     send_to_logfire="if-token-present",
 )
+logfire.info("Bot starting up", environment=os.getenv("LOGFIRE_ENVIRONMENT", "development"))
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 

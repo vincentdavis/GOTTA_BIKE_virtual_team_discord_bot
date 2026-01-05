@@ -1,6 +1,7 @@
 """Discord bot instance."""
 
 import asyncio
+import os
 
 import discord
 from discord.ext import commands
@@ -15,4 +16,9 @@ try:
 except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
-bot = commands.Bot(intents=intents)
+# Use debug_guilds for instant command sync to the configured guild
+# Global commands can take up to an hour to propagate
+guild_id = os.getenv("DISCORD_GUILD_ID")
+debug_guilds = [int(guild_id)] if guild_id else None
+
+bot = commands.Bot(intents=intents, debug_guilds=debug_guilds)
