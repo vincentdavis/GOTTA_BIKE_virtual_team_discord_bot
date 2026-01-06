@@ -32,6 +32,7 @@ COGS = [
     "src.cogs.role_sync",
     "src.cogs.member_sync",
     "src.cogs.zwiftpower",
+    "src.cogs.in_channel",
 ]
 
 

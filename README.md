@@ -13,6 +13,7 @@ A Discord bot for managing Zwift racing teams. Built with [py-cord](https://docs
 | `/team_links` | Generate a magic link to access the team links page | Everyone |
 | `/my_profile` | View your ZwiftPower and Zwift Racing profile | Everyone |
 | `/teammate_profile` | Search and view a teammate's profile | Everyone |
+| `/in_channel` | Get filtered roster link for members in current channel | Team Member |
 | `/sync_my_roles` | Sync your Discord roles to the team database | Everyone |
 | `/sync_roles` | Manually sync all guild roles to the database | Admin |
 | `/sync_members` | Sync all guild members to the database | Admin |
@@ -94,6 +95,7 @@ docker run --env-file .env coalition-bot
 │   └── cogs/
 │       ├── about.py         # /help command
 │       ├── diagnostics.py   # /diag debug command
+│       ├── in_channel.py    # /in_channel filtered roster command
 │       ├── member_sync.py   # /sync_members command
 │       ├── role_sync.py     # Role syncing commands and listeners
 │       ├── team_links.py    # Magic link generation

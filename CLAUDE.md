@@ -36,6 +36,7 @@ docker run coalition-bot
 **Cog System:** All Discord commands are organized as cogs in `src/cogs/`:
 - `about.py` - `/help` command
 - `diagnostics.py` - `/diag` debug command (DEBUG mode only)
+- `in_channel.py` - `/in_channel` filtered roster command (creates link showing only channel members)
 - `role_sync.py` - Syncs Discord roles to Django API (`/sync_roles`, `/sync_my_roles`)
 - `team_links.py` - Magic link generation (`/team_links`)
 - `zwiftpower.py` - ZwiftPower/ZwiftRacing profile commands (`/my_profile`, `/teammate_profile`, `/update_zp_team`, `/update_zp_results`)
