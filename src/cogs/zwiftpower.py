@@ -453,15 +453,29 @@ class ZwiftPower(commands.Cog):
             }
             for key, label in verify_labels.items():
                 v = verification.get(key, {})
-                if not v.get("verified"):
+                status = v.get("status", "No record")
+                has_pending = v.get("has_pending", False)
+
+                if status == "No record":
                     verify_lines.append(f"**{label}:** No record")
-                elif v.get("is_expired"):
+                elif status == "Pending":
+                    # No valid record, just pending
+                    verify_lines.append(f"**{label}:** ⏳ Pending")
+                elif status == "Pending (expired)":
+                    verify_lines.append(f"**{label}:** ⏳ Pending (expired)")
+                elif status == "Expired":
                     verify_lines.append(f"**{label}:** ❌ Expired")
+                elif status == "Never expires":
+                    pending_note = " (⏳ new Pending)" if has_pending else ""
+                    verify_lines.append(f"**{label}:** ✅ Never expires{pending_note}")
                 elif v.get("days_remaining") is not None:
+                    # Valid (X days)
                     days = v["days_remaining"]
-                    verify_lines.append(f"**{label}:** ✅ {days} days")
+                    pending_note = " (⏳ new Pending)" if has_pending else ""
+                    verify_lines.append(f"**{label}:** ✅ {days} days{pending_note}")
                 else:
-                    verify_lines.append(f"**{label}:** ✅ Never expires")
+                    # Fallback - show the status as-is
+                    verify_lines.append(f"**{label}:** {status}")
 
             if verify_lines:
                 embed.add_field(
