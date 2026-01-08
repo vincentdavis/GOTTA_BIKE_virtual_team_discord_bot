@@ -5,44 +5,95 @@ import logfire
 from discord.ext import commands
 
 
-class JoinCoalitionModal(discord.ui.Modal):
-    """Modal for collecting text inputs for joining The Coalition."""
+class JoinCoalitionModal(discord.ui.DesignerModal):
+    """Modal for joining The Coalition using Components V2."""
 
-    def __init__(self, user_nickname: str, reasons: list[str], platforms: list[str]):
-        super().__init__(title="Join The Coalition")
-        self.reasons = reasons
-        self.platforms = platforms
-
-        # Add a label-like text at the top (using a disabled text input as workaround)
-        self.full_name = discord.ui.InputText(
-            label="What is your full name?",
-            placeholder="Enter your full name",
-            required=True,
-            style=discord.InputTextStyle.short,
-        )
-        self.add_item(self.full_name)
-
-        self.zwiftpower_url = discord.ui.InputText(
-            label="ZwiftPower Profile URL (if you use Zwift)",
-            placeholder="https://zwiftpower.com/profile.php?z=...",
-            required=False,
-            style=discord.InputTextStyle.short,
-        )
-        self.add_item(self.zwiftpower_url)
-
+    def __init__(self, user_nickname: str, *args, **kwargs):
         self.user_nickname = user_nickname
+
+        # Text input for full name
+        full_name_input = discord.ui.Label(
+            "What is your full name?",
+            discord.ui.InputText(
+                placeholder="Enter your full name",
+                required=True,
+            ),
+        )
+
+        # Multi-select for reasons to join
+        reason_select = discord.ui.Label(
+            "Why would you like to join The Coalition?",
+            discord.ui.Select(
+                placeholder="Select one or more reasons",
+                min_values=1,
+                max_values=3,
+                options=[
+                    discord.SelectOption(label="Virtual Racing", value="Virtual Racing"),
+                    discord.SelectOption(label="Fitness and Training", value="Fitness and Training"),
+                    discord.SelectOption(label="Community", value="Community"),
+                ],
+            ),
+            description="You can select multiple options.",
+        )
+
+        # Multi-select for platforms
+        platform_select = discord.ui.Label(
+            "Which virtual cycling platforms do you use?",
+            discord.ui.Select(
+                placeholder="Select one or more platforms",
+                min_values=1,
+                max_values=5,
+                options=[
+                    discord.SelectOption(label="Zwift", value="Zwift"),
+                    discord.SelectOption(label="Rouvy", value="Rouvy"),
+                    discord.SelectOption(label="MyWhoosh", value="MyWhoosh"),
+                    discord.SelectOption(label="TrainingPeaks Virtual", value="TrainingPeaks Virtual"),
+                    discord.SelectOption(label="Other", value="Other"),
+                ],
+            ),
+            description="You can select multiple options.",
+        )
+
+        # Text input for ZwiftPower URL
+        zwiftpower_input = discord.ui.Label(
+            "ZwiftPower Profile URL",
+            discord.ui.InputText(
+                placeholder="https://zwiftpower.com/profile.php?z=...",
+                required=False,
+            ),
+            description="If you use Zwift, please make sure you have a zwiftpower.com profile.",
+        )
+
+        super().__init__(
+            full_name_input,
+            reason_select,
+            platform_select,
+            zwiftpower_input,
+            *args,
+            **kwargs,
+        )
 
     async def callback(self, interaction: discord.Interaction):
         """Handle modal submission and send DM to user."""
+        # Extract values from the modal children
+        # children[0] = full_name (Label -> InputText)
+        # children[1] = reasons (Label -> Select)
+        # children[2] = platforms (Label -> Select)
+        # children[3] = zwiftpower_url (Label -> InputText)
+        full_name = self.children[0].item.value
+        reasons = self.children[1].item.values
+        platforms = self.children[2].item.values
+        zwiftpower_url = self.children[3].item.value
+
         # Build the response message
         response_message = (
             "**Thank you for your interest in joining The Coalition!**\n\n"
             "Here is a summary of your submission:\n\n"
             f"**Server Nickname:** {self.user_nickname}\n"
-            f"**Full Name:** {self.full_name.value}\n"
-            f"**Reasons for Joining:** {', '.join(self.reasons)}\n"
-            f"**Virtual Cycling Platforms:** {', '.join(self.platforms)}\n"
-            f"**ZwiftPower Profile:** {self.zwiftpower_url.value or 'Not provided'}\n\n"
+            f"**Full Name:** {full_name}\n"
+            f"**Reasons for Joining:** {', '.join(reasons)}\n"
+            f"**Virtual Cycling Platforms:** {', '.join(platforms)}\n"
+            f"**ZwiftPower Profile:** {zwiftpower_url or 'Not provided'}\n\n"
             "A team administrator will review your application soon!"
         )
 
@@ -66,103 +117,10 @@ class JoinCoalitionModal(discord.ui.Modal):
             "Join Coalition application submitted",
             user_id=str(interaction.user.id),
             user_name=interaction.user.name,
-            full_name=self.full_name.value,
-            reasons=self.reasons,
-            platforms=self.platforms,
+            full_name=full_name,
+            reasons=reasons,
+            platforms=platforms,
         )
-
-
-class JoinCoalitionView(discord.ui.View):
-    """View with select menus for joining The Coalition."""
-
-    REASON_OPTIONS = ["Virtual Racing", "Fitness and Training", "Community"]
-    PLATFORM_OPTIONS = ["Zwift", "Rouvy", "MyWhoosh", "TrainingPeaks Virtual", "Other"]
-
-    def __init__(self, user_nickname: str):
-        super().__init__(timeout=300)  # 5 minute timeout
-        self.user_nickname = user_nickname
-        self.selected_reasons: list[str] = []
-        self.selected_platforms: list[str] = []
-
-        # Create select menus programmatically so we can update them
-        self.reason_select = discord.ui.Select(
-            placeholder="Why would you like to join The Coalition?",
-            min_values=1,
-            max_values=3,
-            options=[discord.SelectOption(label=opt, value=opt) for opt in self.REASON_OPTIONS],
-            row=0,
-        )
-        self.reason_select.callback = self.on_reason_select  # ty:ignore[invalid-assignment]
-        self.add_item(self.reason_select)
-
-        self.platform_select = discord.ui.Select(
-            placeholder="Which virtual cycling platforms do you use?",
-            min_values=1,
-            max_values=5,
-            options=[discord.SelectOption(label=opt, value=opt) for opt in self.PLATFORM_OPTIONS],
-            row=1,
-        )
-        self.platform_select.callback = self.on_platform_select  # ty:ignore[invalid-assignment]
-        self.add_item(self.platform_select)
-
-        self.continue_button = discord.ui.Button(
-            label="Continue",
-            style=discord.ButtonStyle.primary,
-            disabled=True,
-            row=2,
-        )
-        self.continue_button.callback = self.on_continue  # ty:ignore[invalid-assignment]
-        self.add_item(self.continue_button)
-
-    async def on_reason_select(self, interaction: discord.Interaction):
-        """Handle reason selection."""
-        self.selected_reasons = interaction.data.get("values", [])
-        self._update_select_options()
-        self._update_button_state()
-        await interaction.response.edit_message(view=self)
-
-    async def on_platform_select(self, interaction: discord.Interaction):
-        """Handle platform selection."""
-        self.selected_platforms = interaction.data.get("values", [])
-        self._update_select_options()
-        self._update_button_state()
-        await interaction.response.edit_message(view=self)
-
-    async def on_continue(self, interaction: discord.Interaction):
-        """Open the modal for text inputs."""
-        modal = JoinCoalitionModal(
-            user_nickname=self.user_nickname,
-            reasons=self.selected_reasons,
-            platforms=self.selected_platforms,
-        )
-        await interaction.response.send_modal(modal)
-        self.stop()
-
-    def _update_select_options(self):
-        """Update select options to show selected state."""
-        # Update reason options
-        self.reason_select.options = [
-            discord.SelectOption(
-                label=opt,
-                value=opt,
-                default=(opt in self.selected_reasons),
-            )
-            for opt in self.REASON_OPTIONS
-        ]
-
-        # Update platform options
-        self.platform_select.options = [
-            discord.SelectOption(
-                label=opt,
-                value=opt,
-                default=(opt in self.selected_platforms),
-            )
-            for opt in self.PLATFORM_OPTIONS
-        ]
-
-    def _update_button_state(self):
-        """Enable the continue button if both selections are made."""
-        self.continue_button.disabled = not (self.selected_reasons and self.selected_platforms)
 
 
 class JoinCoalition(commands.Cog):
@@ -181,22 +139,12 @@ class JoinCoalition(commands.Cog):
         # Get user's nickname or display name
         user_nickname = ctx.author.nick or ctx.author.display_name
 
-        # Create the welcome embed
-        embed = discord.Embed(
-            title="Welcome to The COALITION!",
-            description=(
-                "**TEST COMMAND DO NOT USE** We look forward to you joining our community.\n"
-                "[THE COALITION](https://coalitionracing.com/)\n"
-                "Please complete this form to apply for membership.\n\n"
-                f"**Your current server nickname is:** {user_nickname}\n\n"
-                "Please select your answers from the dropdowns below, then click **Continue** "
-                "to complete the application."
-            ),
-            color=discord.Color.blue(),
+        # Create and send the modal
+        modal = JoinCoalitionModal(
+            user_nickname=user_nickname,
+            title="Join The Coalition",
         )
-
-        view = JoinCoalitionView(user_nickname=user_nickname)
-        await ctx.respond(embed=embed, view=view, ephemeral=True)
+        await ctx.send_modal(modal)
 
     async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
         """Handle errors for commands in this cog."""
