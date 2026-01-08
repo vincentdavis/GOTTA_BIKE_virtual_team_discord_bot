@@ -1,5 +1,7 @@
 """Join The Coalition cog for new member onboarding."""
 
+import os
+
 import discord
 import logfire
 from discord.ext import commands
@@ -8,8 +10,9 @@ from discord.ext import commands
 class JoinCoalitionModal(discord.ui.DesignerModal):
     """Modal for joining The Coalition using Components V2."""
 
-    def __init__(self, user_nickname: str, *args, **kwargs):
+    def __init__(self, user_nickname: str, welcome_channel_id: str | None = None, *args, **kwargs):
         self.user_nickname = user_nickname
+        self.welcome_channel_id = welcome_channel_id
 
         # Welcome message at the top
         welcome_text = discord.ui.TextDisplay(
@@ -24,6 +27,15 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             "What is your full name?",
             discord.ui.InputText(
                 placeholder="Enter your full name",
+                required=True,
+            ),
+        )
+
+        # Text input for how they heard about the team
+        how_heard_input = discord.ui.Label(
+            "How did you hear about THE COALITION team?",
+            discord.ui.InputText(
+                placeholder="e.g., Zwift race, friend, social media, etc.",
                 required=True,
             ),
         )
@@ -62,6 +74,25 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             description="You can select multiple options.",
         )
 
+        # Multi-select for Zwift race series (optional)
+        race_series_select = discord.ui.Label(
+            "Which Zwift race series are you interested in?",
+            discord.ui.Select(
+                placeholder="Select all that apply (optional)",
+                min_values=0,
+                max_values=5,
+                required=False,
+                options=[
+                    discord.SelectOption(label="ZRL", value="ZRL"),
+                    discord.SelectOption(label="TTT", value="TTT"),
+                    discord.SelectOption(label="ClubLadder", value="ClubLadder"),
+                    discord.SelectOption(label="FRR", value="FRR"),
+                    discord.SelectOption(label="Other", value="Other"),
+                ],
+            ),
+            description="Optional - select all that apply.",
+        )
+
         # Text input for ZwiftPower URL
         zwiftpower_input = discord.ui.Label(
             "ZwiftPower Profile URL",
@@ -75,8 +106,10 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         super().__init__(
             welcome_text,
             full_name_input,
+            how_heard_input,
             reason_select,
             platform_select,
+            race_series_select,
             zwiftpower_input,
             *args,
             **kwargs,
@@ -87,13 +120,17 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         # Extract values from the modal children
         # children[0] = welcome_text (TextDisplay - no value)
         # children[1] = full_name (Label -> InputText)
-        # children[2] = reasons (Label -> Select)
-        # children[3] = platforms (Label -> Select)
-        # children[4] = zwiftpower_url (Label -> InputText)
+        # children[2] = how_heard (Label -> InputText)
+        # children[3] = reasons (Label -> Select)
+        # children[4] = platforms (Label -> Select)
+        # children[5] = race_series (Label -> Select)
+        # children[6] = zwiftpower_url (Label -> InputText)
         full_name = self.children[1].item.value
-        reasons = self.children[2].item.values
-        platforms = self.children[3].item.values
-        zwiftpower_url = self.children[4].item.value
+        how_heard = self.children[2].item.value
+        reasons = self.children[3].item.values
+        platforms = self.children[4].item.values
+        race_series = self.children[5].item.values
+        zwiftpower_url = self.children[6].item.value
 
         # Build the response message
         response_message = (
@@ -101,8 +138,10 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             "Here is a summary of your submission:\n\n"
             f"**Server Nickname:** {self.user_nickname}\n"
             f"**Full Name:** {full_name}\n"
+            f"**How did you hear about us:** {how_heard}\n"
             f"**Reasons for Joining:** {', '.join(reasons)}\n"
             f"**Virtual Cycling Platforms:** {', '.join(platforms)}\n"
+            f"**Zwift Race Series Interest:** {', '.join(race_series) if race_series else 'None selected'}\n"
             f"**ZwiftPower Profile:** {zwiftpower_url or 'Not provided'}\n\n"
             "A team administrator will review your application soon!"
         )
@@ -128,9 +167,42 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             user_id=str(interaction.user.id),
             user_name=interaction.user.name,
             full_name=full_name,
+            how_heard=how_heard,
             reasons=reasons,
             platforms=platforms,
+            race_series=race_series,
         )
+
+        # Post to welcome team channel if configured
+        if self.welcome_channel_id and interaction.guild:
+            try:
+                channel = interaction.guild.get_channel(int(self.welcome_channel_id))
+                if channel and isinstance(channel, discord.TextChannel):
+                    embed = discord.Embed(
+                        title="New Coalition Application",
+                        description="A new member has applied to join The Coalition!",
+                        color=discord.Color.green(),
+                    )
+                    embed.add_field(name="Discord User", value=f"{interaction.user.mention}", inline=True)
+                    embed.add_field(name="Server Nickname", value=self.user_nickname, inline=True)
+                    embed.add_field(name="Full Name", value=full_name, inline=True)
+                    embed.add_field(name="How They Heard About Us", value=how_heard, inline=False)
+                    embed.add_field(name="Reasons for Joining", value=", ".join(reasons), inline=False)
+                    embed.add_field(name="Virtual Cycling Platforms", value=", ".join(platforms), inline=False)
+                    embed.add_field(
+                        name="Zwift Race Series Interest",
+                        value=", ".join(race_series) if race_series else "None selected",
+                        inline=False,
+                    )
+                    embed.add_field(name="ZwiftPower Profile", value=zwiftpower_url or "Not provided", inline=False)
+                    embed.set_footer(text=f"User ID: {interaction.user.id}")
+                    await channel.send(embed=embed)
+            except Exception as e:
+                logfire.error(
+                    "Failed to post to welcome team channel",
+                    error=str(e),
+                    channel_id=self.welcome_channel_id,
+                )
 
 
 class JoinCoalition(commands.Cog):
@@ -138,6 +210,7 @@ class JoinCoalition(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.welcome_channel_id = os.getenv("WELCOME_TEAM_CHANNEL", "")
 
     @discord.slash_command(name="join_the_coalition", description="Apply to join The Coalition team")
     async def join_the_coalition(self, ctx: discord.ApplicationContext):
@@ -152,6 +225,7 @@ class JoinCoalition(commands.Cog):
         # Create and send the modal
         modal = JoinCoalitionModal(
             user_nickname=user_nickname,
+            welcome_channel_id=self.welcome_channel_id,
             title="Join The Coalition",
         )
         await ctx.send_modal(modal)
