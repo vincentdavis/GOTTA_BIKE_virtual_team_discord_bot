@@ -92,7 +92,7 @@ class JoinCoalitionView(discord.ui.View):
             options=[discord.SelectOption(label=opt, value=opt) for opt in self.REASON_OPTIONS],
             row=0,
         )
-        self.reason_select.callback = self.on_reason_select
+        self.reason_select.callback = self.on_reason_select  # ty:ignore[invalid-assignment]
         self.add_item(self.reason_select)
 
         self.platform_select = discord.ui.Select(
@@ -102,7 +102,7 @@ class JoinCoalitionView(discord.ui.View):
             options=[discord.SelectOption(label=opt, value=opt) for opt in self.PLATFORM_OPTIONS],
             row=1,
         )
-        self.platform_select.callback = self.on_platform_select
+        self.platform_select.callback = self.on_platform_select  # ty:ignore[invalid-assignment]
         self.add_item(self.platform_select)
 
         self.continue_button = discord.ui.Button(
@@ -111,19 +111,19 @@ class JoinCoalitionView(discord.ui.View):
             disabled=True,
             row=2,
         )
-        self.continue_button.callback = self.on_continue
+        self.continue_button.callback = self.on_continue  # ty:ignore[invalid-assignment]
         self.add_item(self.continue_button)
 
     async def on_reason_select(self, interaction: discord.Interaction):
         """Handle reason selection."""
-        self.selected_reasons = self.reason_select.values
+        self.selected_reasons = interaction.data.get("values", [])
         self._update_select_options()
         self._update_button_state()
         await interaction.response.edit_message(view=self)
 
     async def on_platform_select(self, interaction: discord.Interaction):
         """Handle platform selection."""
-        self.selected_platforms = self.platform_select.values
+        self.selected_platforms = interaction.data.get("values", [])
         self._update_select_options()
         self._update_button_state()
         await interaction.response.edit_message(view=self)
