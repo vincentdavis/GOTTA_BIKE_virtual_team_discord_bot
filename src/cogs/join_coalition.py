@@ -75,48 +75,60 @@ class JoinCoalitionModal(discord.ui.Modal):
 class JoinCoalitionView(discord.ui.View):
     """View with select menus for joining The Coalition."""
 
+    REASON_OPTIONS = ["Virtual Racing", "Fitness and Training", "Community"]
+    PLATFORM_OPTIONS = ["Zwift", "Rouvy", "MyWhoosh", "TrainingPeaks Virtual", "Other"]
+
     def __init__(self, user_nickname: str):
         super().__init__(timeout=300)  # 5 minute timeout
         self.user_nickname = user_nickname
         self.selected_reasons: list[str] = []
         self.selected_platforms: list[str] = []
 
-    @discord.ui.select(
-        placeholder="Why would you like to join The Coalition?",
-        min_values=1,
-        max_values=3,
-        options=[
-            discord.SelectOption(label="Virtual Racing", value="Virtual Racing"),
-            discord.SelectOption(label="Fitness and Training", value="Fitness and Training"),
-            discord.SelectOption(label="Community", value="Community"),
-        ],
-    )
-    async def reason_select(self, select: discord.ui.Select, interaction: discord.Interaction):
+        # Create select menus programmatically so we can update them
+        self.reason_select = discord.ui.Select(
+            placeholder="Why would you like to join The Coalition?",
+            min_values=1,
+            max_values=3,
+            options=[discord.SelectOption(label=opt, value=opt) for opt in self.REASON_OPTIONS],
+            row=0,
+        )
+        self.reason_select.callback = self.on_reason_select
+        self.add_item(self.reason_select)
+
+        self.platform_select = discord.ui.Select(
+            placeholder="Which virtual cycling platforms do you use?",
+            min_values=1,
+            max_values=5,
+            options=[discord.SelectOption(label=opt, value=opt) for opt in self.PLATFORM_OPTIONS],
+            row=1,
+        )
+        self.platform_select.callback = self.on_platform_select
+        self.add_item(self.platform_select)
+
+        self.continue_button = discord.ui.Button(
+            label="Continue",
+            style=discord.ButtonStyle.primary,
+            disabled=True,
+            row=2,
+        )
+        self.continue_button.callback = self.on_continue
+        self.add_item(self.continue_button)
+
+    async def on_reason_select(self, interaction: discord.Interaction):
         """Handle reason selection."""
-        self.selected_reasons = select.values
+        self.selected_reasons = self.reason_select.values
+        self._update_select_options()
         self._update_button_state()
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.select(
-        placeholder="Which virtual cycling platforms do you use?",
-        min_values=1,
-        max_values=5,
-        options=[
-            discord.SelectOption(label="Zwift", value="Zwift"),
-            discord.SelectOption(label="Rouvy", value="Rouvy"),
-            discord.SelectOption(label="MyWhoosh", value="MyWhoosh"),
-            discord.SelectOption(label="TrainingPeaks Virtual", value="TrainingPeaks Virtual"),
-            discord.SelectOption(label="Other", value="Other"),
-        ],
-    )
-    async def platform_select(self, select: discord.ui.Select, interaction: discord.Interaction):
+    async def on_platform_select(self, interaction: discord.Interaction):
         """Handle platform selection."""
-        self.selected_platforms = select.values
+        self.selected_platforms = self.platform_select.values
+        self._update_select_options()
         self._update_button_state()
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(label="Continue", style=discord.ButtonStyle.primary, disabled=True)
-    async def continue_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def on_continue(self, interaction: discord.Interaction):
         """Open the modal for text inputs."""
         modal = JoinCoalitionModal(
             user_nickname=self.user_nickname,
@@ -126,10 +138,31 @@ class JoinCoalitionView(discord.ui.View):
         await interaction.response.send_modal(modal)
         self.stop()
 
+    def _update_select_options(self):
+        """Update select options to show selected state."""
+        # Update reason options
+        self.reason_select.options = [
+            discord.SelectOption(
+                label=opt,
+                value=opt,
+                default=(opt in self.selected_reasons),
+            )
+            for opt in self.REASON_OPTIONS
+        ]
+
+        # Update platform options
+        self.platform_select.options = [
+            discord.SelectOption(
+                label=opt,
+                value=opt,
+                default=(opt in self.selected_platforms),
+            )
+            for opt in self.PLATFORM_OPTIONS
+        ]
+
     def _update_button_state(self):
         """Enable the continue button if both selections are made."""
-        if self.selected_reasons and self.selected_platforms:
-            self.continue_button.disabled = False
+        self.continue_button.disabled = not (self.selected_reasons and self.selected_platforms)
 
 
 class JoinCoalition(commands.Cog):
