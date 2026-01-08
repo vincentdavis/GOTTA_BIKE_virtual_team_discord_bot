@@ -124,9 +124,19 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         )
 
         # Post to welcome team channel if configured
+        logfire.info(
+            "Attempting to post to welcome channel",
+            welcome_channel_id=self.welcome_channel_id,
+            has_guild=bool(interaction.guild),
+        )
         if self.welcome_channel_id and interaction.guild:
             try:
                 channel = interaction.guild.get_channel(int(self.welcome_channel_id))
+                logfire.info(
+                    "Channel lookup result",
+                    channel_found=bool(channel),
+                    channel_type=type(channel).__name__ if channel else None,
+                )
                 if channel and isinstance(channel, discord.TextChannel):
                     embed = discord.Embed(
                         title="New Coalition Application",
@@ -147,12 +157,24 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                     embed.add_field(name="ZwiftPower Profile", value=zwiftpower_url or "Not provided", inline=False)
                     embed.set_footer(text=f"User ID: {interaction.user.id}")
                     await channel.send(embed=embed)
+                    logfire.info("Successfully posted to welcome channel")
+                else:
+                    logfire.warning(
+                        "Channel not found or not a TextChannel",
+                        channel_id=self.welcome_channel_id,
+                    )
             except Exception as e:
                 logfire.error(
                     "Failed to post to welcome team channel",
                     error=str(e),
                     channel_id=self.welcome_channel_id,
                 )
+        else:
+            logfire.info(
+                "Skipping welcome channel post - not configured or no guild",
+                welcome_channel_id=self.welcome_channel_id,
+                has_guild=bool(interaction.guild),
+            )
 
 
 class JoinCoalitionView(discord.ui.View):
