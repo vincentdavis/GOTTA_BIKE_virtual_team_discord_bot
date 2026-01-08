@@ -46,6 +46,67 @@ docker run coalition-bot
 - `X-Guild-Id`: From `DISCORD_GUILD_ID` env var
 - `X-Discord-User-Id`: Requesting user's Discord ID
 
+## Discord Components V2 (Modals with Select Menus)
+
+This project uses py-cord 2.7+ which supports Discord's **Components V2** system. This allows select menus, file uploads, and other components inside modals (not just text inputs).
+
+### Key Classes
+
+- `discord.ui.DesignerModal` - Use instead of `discord.ui.Modal` for Components V2 features
+- `discord.ui.Label` - Wrapper that adds a label and description to components in modals
+- `discord.ui.TextDisplay` - Display text in modals (doesn't need Label wrapper)
+
+### Supported Components in Modals (via Label wrapper)
+
+- `discord.ui.InputText` - Text input fields
+- `discord.ui.Select` - Single or multi-select dropdowns
+- `discord.ui.FileUpload` - File upload fields
+
+### Example Usage
+
+```python
+class MyModal(discord.ui.DesignerModal):
+    def __init__(self, *args, **kwargs):
+        # Text input wrapped in Label
+        name_input = discord.ui.Label(
+            "What is your name?",
+            discord.ui.InputText(placeholder="Enter name", required=True),
+        )
+
+        # Select menu wrapped in Label (supports multi-select!)
+        color_select = discord.ui.Label(
+            "Favorite colors?",
+            discord.ui.Select(
+                placeholder="Select colors",
+                min_values=1,
+                max_values=3,
+                options=[
+                    discord.SelectOption(label="Red", value="red"),
+                    discord.SelectOption(label="Blue", value="blue"),
+                    discord.SelectOption(label="Green", value="green"),
+                ],
+            ),
+            description="You can select multiple options.",
+        )
+
+        super().__init__(name_input, color_select, *args, **kwargs)
+
+    async def callback(self, interaction: discord.Interaction):
+        # Access values via children[index].item.value or .values
+        name = self.children[0].item.value          # InputText -> .value
+        colors = self.children[1].item.values       # Select -> .values (list)
+        await interaction.response.send_message(f"Name: {name}, Colors: {colors}")
+```
+
+### Reference Implementation
+
+See `src/cogs/join_coalition.py` for a complete example using DesignerModal with multiple select menus and text inputs.
+
+### Documentation
+
+- [Pycord modal_dialogs.py example](https://github.com/Pycord-Development/pycord/blob/master/examples/modal_dialogs.py)
+- [Discord Components V2 API](https://discord.com/developers/docs/components/reference)
+
 ## Environment Variables
 
 Required:

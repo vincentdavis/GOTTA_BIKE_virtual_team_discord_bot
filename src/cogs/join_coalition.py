@@ -11,6 +11,14 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
     def __init__(self, user_nickname: str, *args, **kwargs):
         self.user_nickname = user_nickname
 
+        # Welcome message at the top
+        welcome_text = discord.ui.TextDisplay(
+            "**TEST COMMAND DO NOT USE** We look forward to you joining our community.\n"
+            "[THE COALITION](https://coalitionracing.com/)\n"
+            "Please complete this form to apply for membership.\n\n"
+            f"**Your current server nickname is:** {user_nickname}\n\n"
+        )
+
         # Text input for full name
         full_name_input = discord.ui.Label(
             "What is your full name?",
@@ -65,6 +73,7 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         )
 
         super().__init__(
+            welcome_text,
             full_name_input,
             reason_select,
             platform_select,
@@ -76,14 +85,15 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
     async def callback(self, interaction: discord.Interaction):
         """Handle modal submission and send DM to user."""
         # Extract values from the modal children
-        # children[0] = full_name (Label -> InputText)
-        # children[1] = reasons (Label -> Select)
-        # children[2] = platforms (Label -> Select)
-        # children[3] = zwiftpower_url (Label -> InputText)
-        full_name = self.children[0].item.value
-        reasons = self.children[1].item.values
-        platforms = self.children[2].item.values
-        zwiftpower_url = self.children[3].item.value
+        # children[0] = welcome_text (TextDisplay - no value)
+        # children[1] = full_name (Label -> InputText)
+        # children[2] = reasons (Label -> Select)
+        # children[3] = platforms (Label -> Select)
+        # children[4] = zwiftpower_url (Label -> InputText)
+        full_name = self.children[1].item.value
+        reasons = self.children[2].item.values
+        platforms = self.children[3].item.values
+        zwiftpower_url = self.children[4].item.value
 
         # Build the response message
         response_message = (
