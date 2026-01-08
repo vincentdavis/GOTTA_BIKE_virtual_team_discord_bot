@@ -94,8 +94,8 @@ class JoinCoalitionView(discord.ui.View):
     async def reason_select(self, select: discord.ui.Select, interaction: discord.Interaction):
         """Handle reason selection."""
         self.selected_reasons = select.values
-        await interaction.response.defer()
-        await self._check_completion(interaction)
+        self._update_button_state()
+        await interaction.response.edit_message(view=self)
 
     @discord.ui.select(
         placeholder="Which virtual cycling platforms do you use?",
@@ -112,8 +112,8 @@ class JoinCoalitionView(discord.ui.View):
     async def platform_select(self, select: discord.ui.Select, interaction: discord.Interaction):
         """Handle platform selection."""
         self.selected_platforms = select.values
-        await interaction.response.defer()
-        await self._check_completion(interaction)
+        self._update_button_state()
+        await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="Continue", style=discord.ButtonStyle.primary, disabled=True)
     async def continue_button(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -126,11 +126,10 @@ class JoinCoalitionView(discord.ui.View):
         await interaction.response.send_modal(modal)
         self.stop()
 
-    async def _check_completion(self, interaction: discord.Interaction):
+    def _update_button_state(self):
         """Enable the continue button if both selections are made."""
         if self.selected_reasons and self.selected_platforms:
             self.continue_button.disabled = False
-            await interaction.message.edit(view=self)
 
 
 class JoinCoalition(commands.Cog):
