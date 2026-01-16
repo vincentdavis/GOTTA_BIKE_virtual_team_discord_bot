@@ -109,7 +109,6 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         api_url: str,
         api_key: str,
         guild_id: str,
-        app_base_url: str,
         *args,
         **kwargs,
     ):
@@ -118,7 +117,6 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         self.api_url = api_url
         self.api_key = api_key
         self.guild_id = guild_id
-        self.app_base_url = app_base_url
 
         # 1. How did you hear about us? (text input)
         how_heard_input = discord.ui.Label(
@@ -217,8 +215,8 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                 modal_form_data=modal_form_data,
             )
             if api_result:
-                # Build full application URL
-                application_url = f"{self.app_base_url}{api_result.get('application_url', '')}"
+                # Get application URL - API returns absolute URL, use as-is
+                application_url = api_result.get("application_url", "")
 
         # Build the response message
         response_message = (
@@ -318,7 +316,6 @@ class JoinCoalition(commands.Cog):
         self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
         self.api_key = os.getenv("DBOT_AUTH_KEY", "")
         self.guild_id = os.getenv("DISCORD_GUILD_ID", "")
-        self.app_base_url = os.getenv("APP_BASE_URL", "http://localhost:8000")
 
     @discord.slash_command(name="join_the_coalition", description="Apply to join The Coalition team")
     async def join_the_coalition(self, ctx: discord.ApplicationContext):
@@ -336,7 +333,6 @@ class JoinCoalition(commands.Cog):
             api_url=self.api_url,
             api_key=self.api_key,
             guild_id=self.guild_id,
-            app_base_url=self.app_base_url,
             title="Join The Coalition",
         )
         await ctx.send_modal(modal)

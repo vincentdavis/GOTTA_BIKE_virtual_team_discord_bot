@@ -81,7 +81,6 @@ docker run --env-file .env coalition-bot
 | `DBOT_API_URL` | Yes | Django API endpoint | `http://localhost:8000/api/dbot` |
 | `DBOT_AUTH_KEY` | Yes | API authentication key | - |
 | `APP_LOGIN_URL` | Yes | URL to the app login/signup page | - |
-| `APP_BASE_URL` | Yes | Base URL of the web app (for application links) | `http://localhost:8000` |
 | `DISCORD_GUILD_ID` | Yes | Target guild ID for commands | - |
 | `TEAM_MEMBER_ROLE_ID` | Yes | Role ID required for non-admin commands | - |
 | `WELCOME_TEAM_CHANNEL` | No | Channel ID for welcome/application notifications | - |
