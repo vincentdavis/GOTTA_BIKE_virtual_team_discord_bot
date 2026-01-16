@@ -10,6 +10,7 @@ A Discord bot for managing Zwift racing teams. Built with [py-cord](https://docs
 |---------|-------------|-------------|
 | `/help` | Get philosophical wisdom about Zwift racing | Team Member |
 | `/create_account` | Get the link to create a team account | Everyone |
+| `/join_the_coalition` | Apply to join the team (creates membership application) | Everyone |
 | `/team_links` | Generate a magic link to access the team links page | Everyone |
 | `/my_profile` | View your ZwiftPower and Zwift Racing profile | Everyone |
 | `/teammate_profile` | Search and view a teammate's profile | Everyone |
@@ -80,8 +81,10 @@ docker run --env-file .env coalition-bot
 | `DBOT_API_URL` | Yes | Django API endpoint | `http://localhost:8000/api/dbot` |
 | `DBOT_AUTH_KEY` | Yes | API authentication key | - |
 | `APP_LOGIN_URL` | Yes | URL to the app login/signup page | - |
+| `APP_BASE_URL` | Yes | Base URL of the web app (for application links) | `http://localhost:8000` |
 | `DISCORD_GUILD_ID` | Yes | Target guild ID for commands | - |
 | `TEAM_MEMBER_ROLE_ID` | Yes | Role ID required for non-admin commands | - |
+| `WELCOME_TEAM_CHANNEL` | No | Channel ID for welcome/application notifications | - |
 | `DEBUG` | No | Enable debug mode for `/diag` command | `false` |
 | `LOGFIRE_ENVIRONMENT` | No | Logfire environment name | `development` |
 
@@ -96,6 +99,7 @@ docker run --env-file .env coalition-bot
 │       ├── about.py         # /help command
 │       ├── diagnostics.py   # /diag debug command
 │       ├── in_channel.py    # /in_channel filtered roster command
+│       ├── join_coalition.py # /join_the_coalition membership application
 │       ├── member_sync.py   # /sync_members command
 │       ├── role_sync.py     # Role syncing commands and listeners
 │       ├── team_links.py    # Magic link generation

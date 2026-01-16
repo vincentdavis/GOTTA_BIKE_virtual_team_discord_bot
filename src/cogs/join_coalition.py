@@ -4,8 +4,95 @@ import os
 from typing import ClassVar
 
 import discord
+import httpx
 import logfire
 from discord.ext import commands
+
+
+async def create_membership_application(
+    api_url: str,
+    api_key: str,
+    guild_id: str,
+    user: discord.User,
+    member: discord.Member,
+    modal_form_data: dict,
+) -> dict | None:
+    """Create a membership application via the Django API.
+
+    Args:
+        api_url: Base URL for the API.
+        api_key: API authentication key.
+        guild_id: Discord guild ID.
+        user: Discord user object.
+        member: Discord member object.
+        modal_form_data: Data from the modal form.
+
+    Returns:
+        API response dict or None if failed.
+
+    """
+    headers = {
+        "X-API-Key": api_key,
+        "X-Guild-Id": guild_id,
+        "X-Discord-User-Id": str(user.id),
+    }
+
+    payload = {
+        "discord_id": str(user.id),
+        "discord_username": user.name,
+        "server_nickname": member.nick or member.display_name,
+        "avatar_url": user.display_avatar.url if user.display_avatar else "",
+        "guild_avatar_url": member.guild_avatar.url if member.guild_avatar else "",
+        "discord_user_data": {
+            "id": str(user.id),
+            "name": user.name,
+            "display_name": user.display_name,
+            "discriminator": user.discriminator,
+            "bot": user.bot,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        },
+        "discord_member_data": {
+            "id": str(member.id),
+            "nick": member.nick,
+            "display_name": member.display_name,
+            "joined_at": member.joined_at.isoformat() if member.joined_at else None,
+            "roles": [{"id": str(r.id), "name": r.name} for r in member.roles],
+        },
+        "modal_form_data": modal_form_data,
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{api_url}/membership_application",
+                json=payload,
+                headers=headers,
+                timeout=15.0,
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                logfire.info(
+                    "Membership application created/retrieved",
+                    discord_id=str(user.id),
+                    application_id=result.get("id"),
+                    already_exists=result.get("already_exists", False),
+                )
+                return result
+            else:
+                logfire.error(
+                    "Failed to create membership application",
+                    status_code=response.status_code,
+                    response=response.text,
+                )
+                return None
+
+    except httpx.TimeoutException:
+        logfire.error("Membership application API request timed out")
+        return None
+    except httpx.RequestError as e:
+        logfire.error("Membership application API request failed", error=str(e))
+        return None
 
 
 class JoinCoalitionModal(discord.ui.DesignerModal):
@@ -15,9 +102,23 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
     PLATFORM_OPTIONS: ClassVar[list[str]] = ["Zwift", "Rouvy", "MyWhoosh", "TrainingPeaks Virtual", "Other"]
     RACE_SERIES_OPTIONS: ClassVar[list[str]] = ["ZRL", "TTT", "ClubLadder", "FRR", "Other"]
 
-    def __init__(self, user_nickname: str, welcome_channel_id: str | None, *args, **kwargs):
+    def __init__(
+        self,
+        user_nickname: str,
+        welcome_channel_id: str | None,
+        api_url: str,
+        api_key: str,
+        guild_id: str,
+        app_base_url: str,
+        *args,
+        **kwargs,
+    ):
         self.user_nickname = user_nickname
         self.welcome_channel_id = welcome_channel_id
+        self.api_url = api_url
+        self.api_key = api_key
+        self.guild_id = guild_id
+        self.app_base_url = app_base_url
 
         # 1. How did you hear about us? (text input)
         how_heard_input = discord.ui.Label(
@@ -95,6 +196,30 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
         platforms = self.children[3].item.values
         race_series = self.children[4].item.values
 
+        # Build modal form data for API
+        modal_form_data = {
+            "how_heard": how_heard,
+            "reasons": reasons,
+            "know_someone": know_someone,
+            "platforms": platforms,
+            "race_series": race_series,
+        }
+
+        # Create membership application via API
+        application_url = None
+        if isinstance(interaction.user, discord.Member) and interaction.guild:
+            api_result = await create_membership_application(
+                api_url=self.api_url,
+                api_key=self.api_key,
+                guild_id=self.guild_id,
+                user=interaction.user,
+                member=interaction.user,
+                modal_form_data=modal_form_data,
+            )
+            if api_result:
+                # Build full application URL
+                application_url = f"{self.app_base_url}{api_result.get('application_url', '')}"
+
         # Build the response message
         response_message = (
             "**Thank you for your interest in joining The Coalition!**\n\n"
@@ -105,14 +230,21 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             f"**Know someone on the team:** {know_someone or 'No'}\n"
             f"**Virtual Cycling Platforms:** {', '.join(platforms)}\n"
             f"**Zwift Race Series Interest:** {', '.join(race_series) if race_series else 'None selected'}\n\n"
-            "A team administrator will review your application soon!"
         )
+
+        if application_url:
+            response_message += (
+                f"**Complete your application here:** {application_url}\n\n"
+                "Please fill out your name and agree to the terms to complete your application.\n"
+            )
+
+        response_message += "A team administrator will review your application soon!"
 
         # Try to send DM to the user
         try:
             await interaction.user.send(response_message)
             await interaction.response.send_message(
-                "Your application has been submitted! Check your DMs for a confirmation.",
+                "Your application has been submitted! Check your DMs for a confirmation and link to complete your application.",
                 ephemeral=True,
             )
         except discord.Forbidden:
@@ -133,6 +265,7 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             know_someone=know_someone,
             platforms=platforms,
             race_series=race_series,
+            application_url=application_url,
         )
 
         # Post to welcome team channel if configured
@@ -158,6 +291,8 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                         value=", ".join(race_series) if race_series else "None selected",
                         inline=False,
                     )
+                    if application_url:
+                        embed.add_field(name="Application Link", value=application_url, inline=False)
                     embed.set_footer(text=f"User ID: {interaction.user.id}")
                     await channel.send(embed=embed)
                     logfire.info("Successfully posted to welcome channel")
@@ -180,6 +315,10 @@ class JoinCoalition(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.welcome_channel_id = os.getenv("WELCOME_TEAM_CHANNEL", "")
+        self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
+        self.api_key = os.getenv("DBOT_AUTH_KEY", "")
+        self.guild_id = os.getenv("DISCORD_GUILD_ID", "")
+        self.app_base_url = os.getenv("APP_BASE_URL", "http://localhost:8000")
 
     @discord.slash_command(name="join_the_coalition", description="Apply to join The Coalition team")
     async def join_the_coalition(self, ctx: discord.ApplicationContext):
@@ -194,6 +333,10 @@ class JoinCoalition(commands.Cog):
         modal = JoinCoalitionModal(
             user_nickname=user_nickname,
             welcome_channel_id=self.welcome_channel_id,
+            api_url=self.api_url,
+            api_key=self.api_key,
+            guild_id=self.guild_id,
+            app_base_url=self.app_base_url,
             title="Join The Coalition",
         )
         await ctx.send_modal(modal)
