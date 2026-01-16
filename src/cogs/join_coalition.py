@@ -67,8 +67,8 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                 min_values=0,
                 max_values=5,
                 options=[discord.SelectOption(label=opt, value=opt) for opt in self.RACE_SERIES_OPTIONS],
+                required=False,
             ),
-            required=False,
         )
 
         super().__init__(
