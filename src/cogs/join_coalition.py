@@ -218,42 +218,6 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                 # Get application URL - API returns absolute URL, use as-is
                 application_url = api_result.get("application_url", "")
 
-        # Build the response message
-        response_message = (
-            "**Thank you for your interest in joining The Coalition!**\n\n"
-            "Here is a summary of your submission:\n\n"
-            f"**Server Nickname:** {self.user_nickname}\n"
-            f"**How did you hear about us:** {how_heard}\n"
-            f"**Reasons for Joining:** {', '.join(reasons)}\n"
-            f"**Know someone on the team:** {know_someone or 'No'}\n"
-            f"**Virtual Cycling Platforms:** {', '.join(platforms)}\n"
-            f"**Zwift Race Series Interest:** {', '.join(race_series) if race_series else 'None selected'}\n\n"
-        )
-
-        if application_url:
-            response_message += (
-                f"**Complete your application here:** {application_url}\n\n"
-                "Please fill out your name and agree to the terms to complete your application.\n"
-            )
-
-        response_message += "A team administrator will review your application soon!"
-
-        # Try to send DM to the user
-        try:
-            await interaction.user.send(response_message)
-            await interaction.response.send_message(
-                "Your application has been submitted! Check your DMs for a confirmation and link to complete your application.",
-                ephemeral=True,
-            )
-        except discord.Forbidden:
-            # User has DMs disabled
-            await interaction.response.send_message(
-                "Your application has been submitted, but I couldn't send you a DM. "
-                "Please enable DMs from server members to receive confirmations.\n\n"
-                f"Here's your submission summary:\n{response_message}",
-                ephemeral=True,
-            )
-
         logfire.info(
             "Join Coalition application submitted",
             user_id=str(interaction.user.id),
@@ -266,7 +230,7 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
             application_url=application_url,
         )
 
-        # Post to welcome team channel if configured
+        # Post form data to welcome team channel (without the public link)
         if self.welcome_channel_id and interaction.guild:
             try:
                 channel = interaction.guild.get_channel(int(self.welcome_channel_id))
@@ -289,11 +253,9 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                         value=", ".join(race_series) if race_series else "None selected",
                         inline=False,
                     )
-                    if application_url:
-                        embed.add_field(name="Application Link", value=application_url, inline=False)
                     embed.set_footer(text=f"User ID: {interaction.user.id}")
                     await channel.send(embed=embed)
-                    logfire.info("Successfully posted to welcome channel")
+                    logfire.info("Successfully posted application to welcome channel")
                 else:
                     logfire.warning(
                         "Channel not found or not a TextChannel",
@@ -305,6 +267,18 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
                     error=str(e),
                     channel_id=self.welcome_channel_id,
                 )
+
+        # Send ephemeral message to user with their application link
+        if application_url:
+            await interaction.response.send_message(
+                f"{self.user_nickname} please complete your application here. {application_url}",
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(
+                "Your application has been submitted! A team administrator will review it soon.",
+                ephemeral=True,
+            )
 
 
 class JoinCoalition(commands.Cog):

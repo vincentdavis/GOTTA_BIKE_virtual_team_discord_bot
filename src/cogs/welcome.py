@@ -6,6 +6,51 @@ import discord
 import logfire
 from discord.ext import commands
 
+from src.cogs.join_coalition import JoinCoalitionModal
+
+
+class JoinCoalitionButton(discord.ui.View):
+    """View containing a button to open the join coalition modal."""
+
+    def __init__(
+        self,
+        welcome_channel_id: str,
+        api_url: str,
+        api_key: str,
+        guild_id: str,
+    ):
+        super().__init__(timeout=None)  # Persistent view (no timeout)
+        self.welcome_channel_id = welcome_channel_id
+        self.api_url = api_url
+        self.api_key = api_key
+        self.guild_id = guild_id
+
+    @discord.ui.button(
+        label="Join The Coalition",
+        style=discord.ButtonStyle.green,
+        custom_id="join_coalition_button",
+    )
+    async def join_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        """Handle button click to open the join modal."""
+        if not isinstance(interaction.user, discord.Member):
+            await interaction.response.send_message(
+                "This button can only be used in a server.",
+                ephemeral=True,
+            )
+            return
+
+        user_nickname = interaction.user.nick or interaction.user.display_name
+
+        modal = JoinCoalitionModal(
+            user_nickname=user_nickname,
+            welcome_channel_id=self.welcome_channel_id,
+            api_url=self.api_url,
+            api_key=self.api_key,
+            guild_id=self.guild_id,
+            title="Join The Coalition",
+        )
+        await interaction.response.send_modal(modal)
+
 
 class Welcome(commands.Cog):
     """Cog for welcoming new members to the server."""
@@ -13,6 +58,19 @@ class Welcome(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.welcome_channel_id = os.getenv("WELCOME_TEAM_CHANNEL", "")
+        self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
+        self.api_key = os.getenv("DBOT_AUTH_KEY", "")
+        self.guild_id = os.getenv("DISCORD_GUILD_ID", "")
+
+        # Register persistent view for button to work after bot restart
+        self.bot.add_view(
+            JoinCoalitionButton(
+                welcome_channel_id=self.welcome_channel_id,
+                api_url=self.api_url,
+                api_key=self.api_key,
+                guild_id=self.guild_id,
+            )
+        )
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -43,11 +101,19 @@ class Welcome(commands.Cog):
 
         welcome_message = (
             f"Hello {member.mention} Welcome to THE COALITION. Our membership team is here to help.\n"
-            f"Please complete our membership application by typing `/join_the_coalition` right here."
+            "Please complete our membership application by typing `/join_the_coalition` right here "
+            "or click the button below."
+        )
+
+        view = JoinCoalitionButton(
+            welcome_channel_id=self.welcome_channel_id,
+            api_url=self.api_url,
+            api_key=self.api_key,
+            guild_id=self.guild_id,
         )
 
         try:
-            await channel.send(welcome_message)
+            await channel.send(welcome_message, view=view)
             logfire.info(
                 "Welcome message sent",
                 member_id=member.id,
