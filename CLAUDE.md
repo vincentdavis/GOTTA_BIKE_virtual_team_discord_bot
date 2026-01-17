@@ -37,9 +37,18 @@ docker run coalition-bot
 - `about.py` - `/help` command
 - `diagnostics.py` - `/diag` debug command (DEBUG mode only)
 - `in_channel.py` - `/in_channel` filtered roster command (creates link showing only channel members)
+- `join_coalition.py` - `/join_the_coalition` membership application with multi-select form
 - `role_sync.py` - Syncs Discord roles to Django API (`/sync_roles`, `/sync_my_roles`)
 - `team_links.py` - Magic link generation (`/team_links`)
+- `welcome.py` - Sends welcome message to new members in the welcome channel
 - `zwiftpower.py` - ZwiftPower/ZwiftRacing profile commands (`/my_profile`, `/teammate_profile`, `/update_zp_team`, `/update_zp_results`)
+
+### Join Coalition Form Options
+
+The `/join_the_coalition` command collects:
+- **Reasons for joining:** Virtual Racing, Fitness and Training, Community
+- **Platforms:** Zwift, Rouvy, MyWhoosh, TrainingPeaks Virtual, Other
+- **Race series interest:** ZRL, TTT, ClubLadder, FRR, Women's Racing, Other
 
 **API Communication:** Cogs authenticate to the Django backend using headers:
 - `X-API-Key`: From `DBOT_AUTH_KEY` env var
@@ -119,6 +128,7 @@ Optional:
 - `DEBUG` - Enable debug mode for `/diag` command
 - `LOGFIRE_TOKEN` - Logfire write token for production (get from logfire.pydantic.dev)
 - `LOGFIRE_ENVIRONMENT` - Logfire environment name (default: `development`)
+- `WELCOME_TEAM_CHANNEL` - Channel ID where welcome messages are sent to new members
 
 ## Code Style
 

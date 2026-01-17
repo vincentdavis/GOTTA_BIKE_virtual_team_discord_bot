@@ -10,7 +10,7 @@ A Discord bot for managing Zwift racing teams. Built with [py-cord](https://docs
 |---------|-------------|-------------|
 | `/help` | Get philosophical wisdom about Zwift racing | Team Member |
 | `/create_account` | Get the link to create a team account | Everyone |
-| `/join_the_coalition` | Apply to join the team (creates membership application) | Everyone |
+| `/join_the_coalition` | Apply to join the team (membership application form) | Everyone |
 | `/team_links` | Generate a magic link to access the team links page | Everyone |
 | `/my_profile` | View your ZwiftPower and Zwift Racing profile | Everyone |
 | `/teammate_profile` | Search and view a teammate's profile | Everyone |
@@ -21,6 +21,18 @@ A Discord bot for managing Zwift racing teams. Built with [py-cord](https://docs
 | `/update_zp_team` | Trigger ZwiftPower team roster update | Admin |
 | `/update_zp_results` | Trigger ZwiftPower results update | Admin |
 | `/diag` | Debug diagnostics (DEBUG mode only) | Everyone |
+
+### Join Coalition Application Form
+
+The `/join_the_coalition` command presents a modal form collecting:
+
+| Field | Type | Options |
+|-------|------|---------|
+| How did you hear about us? | Text input | Free text |
+| Why do you want to join? | Multi-select | Virtual Racing, Fitness and Training, Community |
+| Know someone on the team? | Text input | Free text (optional) |
+| Virtual cycling platforms | Multi-select | Zwift, Rouvy, MyWhoosh, TrainingPeaks Virtual, Other |
+| Zwift race series interest | Multi-select | ZRL, TTT, ClubLadder, FRR, Women's Racing, Other |
 
 ### Automatic Role Syncing
 

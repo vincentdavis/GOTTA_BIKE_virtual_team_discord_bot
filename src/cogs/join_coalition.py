@@ -100,7 +100,7 @@ class JoinCoalitionModal(discord.ui.DesignerModal):
 
     REASON_OPTIONS: ClassVar[list[str]] = ["Virtual Racing", "Fitness and Training", "Community"]
     PLATFORM_OPTIONS: ClassVar[list[str]] = ["Zwift", "Rouvy", "MyWhoosh", "TrainingPeaks Virtual", "Other"]
-    RACE_SERIES_OPTIONS: ClassVar[list[str]] = ["ZRL", "TTT", "ClubLadder", "FRR", "Other"]
+    RACE_SERIES_OPTIONS: ClassVar[list[str]] = ["ZRL", "TTT", "ClubLadder", "FRR", "Women's Racing", "Other"]
 
     def __init__(
         self,

@@ -34,6 +34,7 @@ COGS = [
     "src.cogs.zwiftpower",
     "src.cogs.in_channel",
     "src.cogs.join_coalition",
+    "src.cogs.welcome",
 ]
 
 
