@@ -72,6 +72,39 @@ class Welcome(commands.Cog):
             )
         )
 
+    @discord.slash_command(name="test_welcome", description="Test the welcome message (admin only)")
+    @commands.has_permissions(administrator=True)
+    async def test_welcome(self, ctx: discord.ApplicationContext):
+        """Send a test welcome message mentioning the command user."""
+        if not isinstance(ctx.author, discord.Member):
+            await ctx.respond("This command can only be used in a server.", ephemeral=True)
+            return
+
+        if not self.welcome_channel_id:
+            await ctx.respond("WELCOME_TEAM_CHANNEL not configured.", ephemeral=True)
+            return
+
+        channel = self.bot.get_channel(int(self.welcome_channel_id))
+        if not channel or not isinstance(channel, discord.TextChannel):
+            await ctx.respond("Welcome channel not found or not a text channel.", ephemeral=True)
+            return
+
+        welcome_message = (
+            f"Hello {ctx.author.mention} Welcome to THE COALITION. Our membership team is here to help.\n"
+            "Please complete our membership application by typing `/join_the_coalition` right here "
+            "or click the button below."
+        )
+
+        view = JoinCoalitionButton(
+            welcome_channel_id=self.welcome_channel_id,
+            api_url=self.api_url,
+            api_key=self.api_key,
+            guild_id=self.guild_id,
+        )
+
+        await channel.send(welcome_message, view=view)
+        await ctx.respond("Test welcome message sent!", ephemeral=True)
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         """Send a welcome message when a new member joins.
