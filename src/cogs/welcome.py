@@ -61,19 +61,24 @@ class Welcome(commands.Cog):
         self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
         self.api_key = os.getenv("DBOT_AUTH_KEY", "")
         self.guild_id = os.getenv("DISCORD_GUILD_ID", "")
+        self._view_registered = False
 
-        # Register persistent view for button to work after bot restart
-        self.bot.add_view(
-            JoinCoalitionButton(
-                welcome_channel_id=self.welcome_channel_id,
-                api_url=self.api_url,
-                api_key=self.api_key,
-                guild_id=self.guild_id,
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Register persistent view when bot is ready."""
+        if not self._view_registered:
+            self.bot.add_view(
+                JoinCoalitionButton(
+                    welcome_channel_id=self.welcome_channel_id,
+                    api_url=self.api_url,
+                    api_key=self.api_key,
+                    guild_id=self.guild_id,
+                )
             )
-        )
+            self._view_registered = True
+            logfire.info("Registered persistent JoinCoalitionButton view")
 
-    @discord.slash_command(name="test_welcome", description="Test the welcome message (admin only)")
-    @commands.has_permissions(administrator=True)
+    @discord.slash_command(name="test_welcome", description="Test the welcome message")
     async def test_welcome(self, ctx: discord.ApplicationContext):
         """Send a test welcome message mentioning the command user."""
         if not isinstance(ctx.author, discord.Member):
