@@ -12,8 +12,16 @@ class About(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+        # Fallback to env var, but prefer server_config at runtime
+        self._env_team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
         self.app_login_url = os.getenv("APP_LOGIN_URL", "")
+
+    @property
+    def team_member_role_id(self) -> str:
+        """Get team member role ID from server config or env fallback."""
+        if hasattr(self.bot, "server_config") and self.bot.server_config.team_member_role_id:
+            return self.bot.server_config.team_member_role_id
+        return self._env_team_member_role_id
 
     def _has_team_member_role(self, member: discord.Member) -> bool:
         """Check if member has the team_member role.

@@ -24,8 +24,9 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 # Import bot instance from src.bot
 from src.bot import bot  # noqa: E402
 
-# Load cogs
+# Load cogs (config_manager must be first so other cogs can access bot.server_config)
 COGS = [
+    "src.cogs.config_manager",
     "src.cogs.about",
     "src.cogs.diagnostics",
     "src.cogs.team_links",

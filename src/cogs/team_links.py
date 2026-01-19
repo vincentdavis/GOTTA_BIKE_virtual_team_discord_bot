@@ -15,7 +15,15 @@ class TeamLinks(commands.Cog):
         self.bot = bot
         self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
         self.api_key = os.getenv("DBOT_AUTH_KEY", "")
-        self.team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+        # Fallback to env var, but prefer server_config at runtime
+        self._env_team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+
+    @property
+    def team_member_role_id(self) -> str:
+        """Get team member role ID from server config or env fallback."""
+        if hasattr(self.bot, "server_config") and self.bot.server_config.team_member_role_id:
+            return self.bot.server_config.team_member_role_id
+        return self._env_team_member_role_id
 
     def _has_team_member_role(self, member: discord.Member) -> bool:
         """Check if member has the team_member role.

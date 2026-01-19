@@ -17,7 +17,15 @@ class Diagnostics(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+        # Fallback to env var, but prefer server_config at runtime
+        self._env_team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
+
+    @property
+    def team_member_role_id(self) -> str:
+        """Get team member role ID from server config or env fallback."""
+        if hasattr(self.bot, "server_config") and self.bot.server_config.team_member_role_id:
+            return self.bot.server_config.team_member_role_id
+        return self._env_team_member_role_id
 
     def _has_team_member_role(self, member: discord.Member) -> bool:
         """Check if member has the team_member role.
@@ -56,6 +64,31 @@ class Diagnostics(commands.Cog):
         roles_text = "\n".join(roles_list) if roles_list else "No roles"
         has_roles = bool(roles_list)
 
+        # Build config status section
+        config_status = "Not loaded"
+        config_values = "N/A"
+        if hasattr(self.bot, "server_config") and self.bot.server_config:
+            cfg = self.bot.server_config
+            config_status = "Loaded from API" if cfg._loaded_from_api else "Loaded from ENV (fallback)"
+            # Truncate long message fields for display
+            public_msg = cfg.new_arrival_message_public
+            public_display = (public_msg[:50] + "...") if public_msg and len(public_msg) > 50 else public_msg or "None"
+            private_msg = cfg.new_arrival_message_private
+            private_display = (
+                (private_msg[:50] + "...") if private_msg and len(private_msg) > 50 else private_msg or "None"
+            )
+
+            config_lines = [
+                f"  upgrade_channel:            {cfg.upgrade_channel or 'None'}",
+                f"  new_arrivals_channel_id:    {cfg.new_arrivals_channel_id or 'None'}",
+                f"  team_member_role_id:        {cfg.team_member_role_id or 'None'}",
+                f"  race_ready_role_id:         {cfg.race_ready_role_id or 'None'}",
+                f"  new_arrival_message_public: {public_display}",
+                f"  new_arrival_message_private:{private_display}",
+                f"  last_updated:               {cfg.last_updated or 'None'}",
+            ]
+            config_values = "\n".join(config_lines)
+
         response = (
             f"**Diagnostic Information**\n"
             f"```\n"
@@ -65,6 +98,8 @@ class Diagnostics(commands.Cog):
             f"Discord Nickname:  {member.nick if hasattr(member, 'nick') and member.nick else 'None'}\n"
             f"Has Roles:         {has_roles}\n"
             f"```\n"
+            f"**Server Config:** {config_status}\n"
+            f"```\n{config_values}\n```\n"
             f"**Roles:**\n{roles_text}"
         )
 

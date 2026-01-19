@@ -128,7 +128,7 @@ Optional:
 - `DEBUG` - Enable debug mode for `/diag` command
 - `LOGFIRE_TOKEN` - Logfire write token for production (get from logfire.pydantic.dev)
 - `LOGFIRE_ENVIRONMENT` - Logfire environment name (default: `development`)
-- `WELCOME_TEAM_CHANNEL` - Channel ID where welcome messages are sent to new members
+- `NEW_ARRIVALS_CHANNEL_ID` - Channel ID where welcome messages are sent to new members
 
 ## Code Style
 

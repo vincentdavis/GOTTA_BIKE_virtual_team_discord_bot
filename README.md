@@ -95,7 +95,7 @@ docker run --env-file .env coalition-bot
 | `APP_LOGIN_URL` | Yes | URL to the app login/signup page | - |
 | `DISCORD_GUILD_ID` | Yes | Target guild ID for commands | - |
 | `TEAM_MEMBER_ROLE_ID` | Yes | Role ID required for non-admin commands | - |
-| `WELCOME_TEAM_CHANNEL` | No | Channel ID for welcome/application notifications | - |
+| `NEW_ARRIVALS_CHANNEL_ID` | No | Channel ID for welcome/new arrival messages | - |
 | `DEBUG` | No | Enable debug mode for `/diag` command | `false` |
 | `LOGFIRE_ENVIRONMENT` | No | Logfire environment name | `development` |
 
