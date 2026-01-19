@@ -10,6 +10,13 @@ from discord.ext import commands
 class About(commands.Cog):
     """Cog for informational commands."""
 
+    # Default help message if not configured via API
+    DEFAULT_HELP_MESSAGE = (
+        "Racing on Zwift transcends mere exercise; it's a metaphysical confrontation "
+        "between ego and algorithm — where watts become wisdom, suffering becomes synergy, "
+        "and every virtual climb mirrors the uphill struggles of our digitized humanity."
+    )
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         # Fallback to env var, but prefer server_config at runtime
@@ -22,6 +29,13 @@ class About(commands.Cog):
         if hasattr(self.bot, "server_config") and self.bot.server_config.team_member_role_id:
             return self.bot.server_config.team_member_role_id
         return self._env_team_member_role_id
+
+    @property
+    def help_message(self) -> str:
+        """Get help message from server config or default fallback."""
+        if hasattr(self.bot, "server_config") and self.bot.server_config.help_message:
+            return self.bot.server_config.help_message
+        return self.DEFAULT_HELP_MESSAGE
 
     def _has_team_member_role(self, member: discord.Member) -> bool:
         """Check if member has the team_member role.
@@ -43,11 +57,7 @@ class About(commands.Cog):
         if not isinstance(ctx.author, discord.Member) or not self._has_team_member_role(ctx.author):
             await ctx.respond("You need the Team Member role to use this command.", ephemeral=True)
             return
-        await ctx.respond(
-            "Racing on Zwift transcends mere exercise; it's a metaphysical confrontation "
-            "between ego and algorithm — where watts become wisdom, suffering becomes synergy, "
-            "and every virtual climb mirrors the uphill struggles of our digitized humanity."
-        )
+        await ctx.respond(self.help_message)
 
     @discord.slash_command(name="create_account", description="Get the link to create a team account")
     async def create_account(self, ctx: discord.ApplicationContext):

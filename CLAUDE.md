@@ -35,12 +35,14 @@ docker run coalition-bot
 
 **Cog System:** All Discord commands are organized as cogs in `src/cogs/`:
 - `about.py` - `/help` command
+- `config_manager.py` - Fetches bot configuration from Django API (channel IDs, welcome messages, etc.)
 - `diagnostics.py` - `/diag` debug command (DEBUG mode only)
 - `in_channel.py` - `/in_channel` filtered roster command (creates link showing only channel members)
 - `join_coalition.py` - `/join_the_coalition` membership application with multi-select form
+- `member_sync.py` - `/sync_members` command to sync guild members to Django
 - `role_sync.py` - Syncs Discord roles to Django API (`/sync_roles`, `/sync_my_roles`)
 - `team_links.py` - Magic link generation (`/team_links`)
-- `welcome.py` - Sends welcome message to new members in the welcome channel
+- `welcome.py` - Sends welcome message to new members, creates membership application, handles Join button
 - `zwiftpower.py` - ZwiftPower/ZwiftRacing profile commands (`/my_profile`, `/teammate_profile`, `/update_zp_team`, `/update_zp_results`)
 
 ### Join Coalition Form Options

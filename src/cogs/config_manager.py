@@ -23,6 +23,7 @@ class ServerConfig:
     new_arrival_message_public: str | None = None
     new_arrival_message_private: str | None = None
     send_new_arrival_dm: bool = True
+    help_message: str | None = None
     last_updated: str | None = None
     _loaded_from_api: bool = field(default=False, repr=False)
 
@@ -42,6 +43,7 @@ class ServerConfig:
             new_arrival_message_public=None,
             new_arrival_message_private=None,
             send_new_arrival_dm=True,
+            help_message=None,
             _loaded_from_api=False,
         )
 
@@ -66,6 +68,7 @@ class ServerConfig:
             new_arrival_message_public=data.get("new_arrival_message_public"),
             new_arrival_message_private=data.get("new_arrival_message_private"),
             send_new_arrival_dm=data.get("send_new_arrival_dm", True),
+            help_message=data.get("help_message"),
             last_updated=datetime.now().isoformat(),
             _loaded_from_api=True,
         )

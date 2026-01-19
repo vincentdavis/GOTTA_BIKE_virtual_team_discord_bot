@@ -107,14 +107,16 @@ docker run --env-file .env coalition-bot
 ├── src/
 │   ├── bot.py           # Bot instance configuration
 │   └── cogs/
-│       ├── about.py         # /help command
-│       ├── diagnostics.py   # /diag debug command
-│       ├── in_channel.py    # /in_channel filtered roster command
+│       ├── about.py          # /help command
+│       ├── config_manager.py # Fetches bot config from Django API
+│       ├── diagnostics.py    # /diag debug command
+│       ├── in_channel.py     # /in_channel filtered roster command
 │       ├── join_coalition.py # /join_the_coalition membership application
-│       ├── member_sync.py   # /sync_members command
-│       ├── role_sync.py     # Role syncing commands and listeners
-│       ├── team_links.py    # Magic link generation
-│       └── zwiftpower.py    # ZwiftPower/ZwiftRacing profile commands
+│       ├── member_sync.py    # /sync_members command
+│       ├── role_sync.py      # Role syncing commands and listeners
+│       ├── team_links.py     # Magic link generation
+│       ├── welcome.py        # Welcome messages for new members
+│       └── zwiftpower.py     # ZwiftPower/ZwiftRacing profile commands
 ├── Dockerfile
 ├── pyproject.toml
 └── ruff.toml
