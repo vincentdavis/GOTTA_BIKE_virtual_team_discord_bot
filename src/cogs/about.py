@@ -57,7 +57,7 @@ class About(commands.Cog):
         if not isinstance(ctx.author, discord.Member) or not self._has_team_member_role(ctx.author):
             await ctx.respond("You need the Team Member role to use this command.", ephemeral=True)
             return
-        await ctx.respond(self.help_message)
+        await ctx.respond(self.help_message, ephemeral=True)
 
     @discord.slash_command(name="create_account", description="Get the link to create a team account")
     async def create_account(self, ctx: discord.ApplicationContext):
