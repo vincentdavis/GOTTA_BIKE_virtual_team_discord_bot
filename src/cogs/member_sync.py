@@ -5,7 +5,10 @@ import os
 import discord
 import httpx
 import logfire
-from discord.ext import commands
+from discord.ext import commands, tasks
+
+# Default sync interval in hours (can be overridden via env var)
+DEFAULT_SYNC_INTERVAL_HOURS = 6
 
 
 class MemberSync(commands.Cog):
@@ -22,6 +25,12 @@ class MemberSync(commands.Cog):
         self.api_url = os.getenv("DBOT_API_URL", "http://localhost:8000/api/dbot")
         self.api_key = os.getenv("DBOT_AUTH_KEY", "")
         self.guild_id = os.getenv("DISCORD_GUILD_ID", "")
+        # Sync interval from env var (in hours), default to 6 hours
+        self.sync_interval_hours = int(os.getenv("MEMBER_SYNC_INTERVAL_HOURS", DEFAULT_SYNC_INTERVAL_HOURS))
+
+    def cog_unload(self):
+        """Stop background tasks when cog is unloaded."""
+        self.periodic_member_sync.cancel()
 
     def _get_headers(self, user_id: str | None = None) -> dict:
         """Get headers for API requests.
@@ -154,6 +163,50 @@ class MemberSync(commands.Cog):
             )
         else:
             await ctx.edit(content="Member sync failed. Check bot logs for details.")
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Start periodic member sync when bot is ready."""
+        logfire.info(
+            "MemberSync cog ready",
+            sync_interval_hours=self.sync_interval_hours,
+        )
+
+        # Start periodic sync task if not already running
+        if not self.periodic_member_sync.is_running():
+            # Update the task interval based on config
+            self.periodic_member_sync.change_interval(hours=self.sync_interval_hours)
+            self.periodic_member_sync.start()
+
+    @tasks.loop(hours=DEFAULT_SYNC_INTERVAL_HOURS)
+    async def periodic_member_sync(self):
+        """Periodically sync all guild members to ensure consistency."""
+        for guild in self.bot.guilds:
+            if str(guild.id) == self.guild_id:
+                logfire.info(
+                    "Starting periodic guild member sync",
+                    guild_id=guild.id,
+                    member_count=len(guild.members),
+                )
+                result = await self._sync_guild_members(guild, str(self.bot.user.id))
+                if result:
+                    logfire.info(
+                        "Periodic member sync complete",
+                        created=result.get("created", 0),
+                        updated=result.get("updated", 0),
+                        rejoined=result.get("rejoined", 0),
+                        left=result.get("left", 0),
+                        linked=result.get("linked", 0),
+                        total_active=result.get("total_active", 0),
+                    )
+                else:
+                    logfire.error("Periodic member sync failed")
+                break
+
+    @periodic_member_sync.before_loop
+    async def before_periodic_member_sync(self):
+        """Wait until the bot is ready before starting periodic sync."""
+        await self.bot.wait_until_ready()
 
     async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
         """Handle errors for commands in this cog.
