@@ -6,21 +6,28 @@ A Discord bot for managing Zwift racing teams. Built with [py-cord](https://docs
 
 ### Slash Commands
 
-| Command | Description | Permissions |
-|---------|-------------|-------------|
-| `/help` | Get philosophical wisdom about Zwift racing | Team Member |
-| `/create_account` | Get the link to create a team account | Everyone |
-| `/join_the_coalition` | Apply to join the team (membership application form) | Everyone |
-| `/team_links` | Generate a magic link to access the team links page | Everyone |
-| `/my_profile` | View your ZwiftPower and Zwift Racing profile | Everyone |
-| `/teammate_profile` | Search and view a teammate's profile | Everyone |
-| `/in_channel` | Get filtered roster link for members in current channel | Team Member |
-| `/sync_my_roles` | Sync your Discord roles to the team database | Everyone |
-| `/sync_roles` | Manually sync all guild roles to the database | Admin |
-| `/sync_members` | Sync all guild members to the database | Admin |
-| `/update_zp_team` | Trigger ZwiftPower team roster update | Admin |
-| `/update_zp_results` | Trigger ZwiftPower results update | Admin |
-| `/diag` | Debug diagnostics (DEBUG mode only) | Everyone |
+| Command | Description | Permission | Notes |
+|---------|-------------|------------|-------|
+| `/help` | Get philosophical wisdom about Zwift racing | Team Member | |
+| `/create_account` | Get the link to create a team account | Everyone | |
+| `/join_the_coalition` | Apply to join the team (membership application form) | Everyone | |
+| `/team_links` | Generate a magic link to access the team links page | Team Member | |
+| `/my_profile` | View your ZwiftPower and Zwift Racing profile | Team Member | |
+| `/teammate_profile` | Search and view a teammate's profile | Team Member | |
+| `/in_channel` | Get filtered roster link for members in current channel | Team Member | |
+| `/sync_my_roles` | Sync your Discord roles to the team database | Everyone | |
+| `/sync_roles` | Manually sync all guild roles to the database | Administrator | |
+| `/sync_members` | Sync all guild members to the database | Administrator | |
+| `/diag` | Debug diagnostics | Team Member | Requires `DEBUG=true` |
+| `/test_welcome` | Test the welcome message | Everyone | |
+
+**Permission Levels:**
+- **Everyone**: No role required. If `TEAM_MEMBER_ROLE_ID` is not configured, Team Member commands also become available to everyone.
+- **Team Member**: Requires the role specified by `TEAM_MEMBER_ROLE_ID` (configured via API or env var).
+- **Administrator**: Requires Discord administrator permission.
+
+**Channel Permissions:**
+Users must have the "Use Application Commands" permission in the channel to see and use slash commands. This is commonly disabled in welcome/arrivals channels - ensure it's enabled for @everyone if new members need to use commands like `/join_the_coalition`.
 
 ### Join Coalition Application Form
 
@@ -92,11 +99,12 @@ docker run --env-file .env coalition-bot
 | `DISCORD_TOKEN` | Yes | Bot token from Discord Developer Portal | - |
 | `DBOT_API_URL` | Yes | Django API endpoint | `http://localhost:8000/api/dbot` |
 | `DBOT_AUTH_KEY` | Yes | API authentication key | - |
-| `APP_LOGIN_URL` | Yes | URL to the app login/signup page | - |
 | `DISCORD_GUILD_ID` | Yes | Target guild ID for commands | - |
-| `TEAM_MEMBER_ROLE_ID` | Yes | Role ID required for non-admin commands | - |
+| `TEAM_MEMBER_ROLE_ID` | No | Role ID for Team Member commands (if not set, all users can access) | - |
+| `APP_LOGIN_URL` | No | URL to the app login/signup page (fetched from API if not set) | - |
 | `NEW_ARRIVALS_CHANNEL_ID` | No | Channel ID for welcome/new arrival messages | - |
 | `DEBUG` | No | Enable debug mode for `/diag` command | `false` |
+| `LOGFIRE_TOKEN` | No | Logfire write token for production | - |
 | `LOGFIRE_ENVIRONMENT` | No | Logfire environment name | `development` |
 
 ## Project Structure
@@ -107,7 +115,7 @@ docker run --env-file .env coalition-bot
 ├── src/
 │   ├── bot.py           # Bot instance configuration
 │   └── cogs/
-│       ├── about.py          # /help command
+│       ├── about.py          # /help, /create_account commands
 │       ├── config_manager.py # Fetches bot config from Django API
 │       ├── diagnostics.py    # /diag debug command
 │       ├── in_channel.py     # /in_channel filtered roster command
@@ -115,7 +123,7 @@ docker run --env-file .env coalition-bot
 │       ├── member_sync.py    # /sync_members command
 │       ├── role_sync.py      # Role syncing commands and listeners
 │       ├── team_links.py     # Magic link generation
-│       ├── welcome.py        # Welcome messages for new members
+│       ├── welcome.py        # Welcome messages, /test_welcome command
 │       └── zwiftpower.py     # ZwiftPower/ZwiftRacing profile commands
 ├── Dockerfile
 ├── pyproject.toml

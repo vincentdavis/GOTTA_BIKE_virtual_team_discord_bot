@@ -34,7 +34,7 @@ docker run coalition-bot
 **Bot Instance:** `src/bot.py` - Creates the Discord bot with `message_content` intent enabled.
 
 **Cog System:** All Discord commands are organized as cogs in `src/cogs/`:
-- `about.py` - `/help` command
+- `about.py` - `/help`, `/create_account` commands
 - `config_manager.py` - Fetches bot configuration from Django API (channel IDs, welcome messages, etc.)
 - `diagnostics.py` - `/diag` debug command (DEBUG mode only)
 - `in_channel.py` - `/in_channel` filtered roster command (creates link showing only channel members)
@@ -42,8 +42,33 @@ docker run coalition-bot
 - `member_sync.py` - `/sync_members` command to sync guild members to Django
 - `role_sync.py` - Syncs Discord roles to Django API (`/sync_roles`, `/sync_my_roles`)
 - `team_links.py` - Magic link generation (`/team_links`)
-- `welcome.py` - Sends welcome message to new members, creates membership application, handles Join button
-- `zwiftpower.py` - ZwiftPower/ZwiftRacing profile commands (`/my_profile`, `/teammate_profile`, `/update_zp_team`, `/update_zp_results`)
+- `welcome.py` - Sends welcome message to new members, `/test_welcome` command, handles Join button
+- `zwiftpower.py` - ZwiftPower/ZwiftRacing profile commands (`/my_profile`, `/teammate_profile`)
+
+### Command Permissions
+
+| Command | Permission | Notes |
+|---------|------------|-------|
+| `/help` | Team Member | |
+| `/create_account` | Everyone | |
+| `/join_the_coalition` | Everyone | |
+| `/team_links` | Team Member | |
+| `/my_profile` | Team Member | |
+| `/teammate_profile` | Team Member | |
+| `/in_channel` | Team Member | |
+| `/sync_my_roles` | Everyone | |
+| `/sync_roles` | Administrator | |
+| `/sync_members` | Administrator | |
+| `/diag` | Team Member | Also requires `DEBUG=true` |
+| `/test_welcome` | Everyone | |
+
+**Permission Levels:**
+- **Everyone**: No role required. If `TEAM_MEMBER_ROLE_ID` is not configured, Team Member commands also become available to everyone.
+- **Team Member**: Requires the role specified by `TEAM_MEMBER_ROLE_ID` (configured via API or env var).
+- **Administrator**: Requires Discord administrator permission (`@commands.has_permissions(administrator=True)`).
+
+**Channel Permissions:**
+Users must have the "Use Application Commands" permission in the channel to see and use slash commands. This is commonly disabled in welcome/arrivals channels - ensure it's enabled for @everyone if new members need to use commands like `/join_the_coalition`.
 
 ### Join Coalition Form Options
 
