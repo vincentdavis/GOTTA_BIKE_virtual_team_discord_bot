@@ -7,7 +7,7 @@ dependencies = [
     "audioop-lts>=0.2.2",
     "beautifulsoup4>=4.14.3",
     "httpx>=0.28.1",
-    "logfire[httpx]>=4.17.0",
+    "logfire[httpx]>=4.19.0",
     "py-cord>=2.7.0",
     "python-dotenv>=1.2.1",
 ]
@@ -15,6 +15,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "logfire-mcp>=0.8.0",
-    "ruff>=0.14.10",
-    "ty>=0.0.9",
+    "ruff>=0.14.14",
+    "ty>=0.0.13",
 ]
