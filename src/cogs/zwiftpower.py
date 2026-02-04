@@ -361,7 +361,7 @@ class ZwiftPower(commands.Cog):
 
             if verify_lines:
                 embed.add_field(
-                    name="Race Ready Status",
+                    name="Race Verified",
                     value="\n".join(verify_lines),
                     inline=False,
                 )
@@ -404,7 +404,7 @@ class ZwiftPower(commands.Cog):
                         )
                         for r in results
                     ]
-        except (httpx.TimeoutException, httpx.RequestError):
+        except httpx.TimeoutException, httpx.RequestError:
             pass
 
         return []
