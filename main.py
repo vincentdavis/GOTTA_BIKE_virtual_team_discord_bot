@@ -36,6 +36,7 @@ COGS = [
     "src.cogs.in_channel",
     "src.cogs.join_coalition",
     "src.cogs.welcome",
+    "src.cogs.videos",
 ]
 
 
