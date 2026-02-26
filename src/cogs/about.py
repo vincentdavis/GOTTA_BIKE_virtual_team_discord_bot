@@ -21,7 +21,6 @@ class About(commands.Cog):
         self.bot = bot
         # Fallback to env var, but prefer server_config at runtime
         self._env_team_member_role_id = os.getenv("TEAM_MEMBER_ROLE_ID", "")
-        self.app_login_url = os.getenv("APP_LOGIN_URL", "")
 
     @property
     def team_member_role_id(self) -> str:
@@ -58,21 +57,6 @@ class About(commands.Cog):
             await ctx.respond("You need the Team Member role to use this command.", ephemeral=True)
             return
         await ctx.respond(self.help_message, ephemeral=True)
-
-    @discord.slash_command(name="create_account", description="Get the link to create a team account")
-    async def create_account(self, ctx: discord.ApplicationContext):
-        """Return the app login URL for creating an account."""
-        if not self.app_login_url:
-            await ctx.respond(
-                "App login URL is not configured. Please contact an administrator.",
-                ephemeral=True,
-            )
-            return
-
-        await ctx.respond(
-            f"Create your team account here:\n{self.app_login_url}",
-            ephemeral=True,
-        )
 
     async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
         """Handle errors for commands in this cog."""

@@ -27,6 +27,7 @@ from src.bot import bot  # noqa: E402
 # Load cogs (config_manager must be first so other cogs can access bot.server_config)
 COGS = [
     "src.cogs.config_manager",
+    "src.cogs.audio_channel",
     "src.cogs.about",
     "src.cogs.diagnostics",
     "src.cogs.team_links",
