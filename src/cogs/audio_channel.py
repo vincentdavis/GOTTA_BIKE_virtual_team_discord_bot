@@ -18,9 +18,9 @@ class AudioChannel(commands.Cog):
             await ctx.respond("No matching audio channel was found.", ephemeral=True)
             return
 
-        audio_name = f"{ctx.channel.name}-audio"
+        audio_name = f"{ctx.channel.name}-audio".lower()
         for channel in ctx.guild.channels:
-            if channel.name == audio_name:
+            if channel.name.lower() == audio_name:
                 await ctx.respond(channel.mention, ephemeral=True)
                 return
 
