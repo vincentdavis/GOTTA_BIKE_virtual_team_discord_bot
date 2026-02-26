@@ -12,7 +12,8 @@ class AudioChannel(commands.Cog):
         self.bot = bot
 
     @discord.slash_command(name="audio_channel", description="Get a link to this channel's audio channel")
-    async def audio_channel(self, ctx: discord.ApplicationContext):
+    @discord.option("private", description="Only show the response to you", type=bool, default=False)
+    async def audio_channel(self, ctx: discord.ApplicationContext, private: bool):
         """Find and link the audio companion channel for the current channel."""
         if not ctx.guild or not ctx.channel or not hasattr(ctx.channel, "name"):
             await ctx.respond("No matching audio channel was found.", ephemeral=True)
@@ -21,7 +22,7 @@ class AudioChannel(commands.Cog):
         audio_name = f"{ctx.channel.name}-audio".lower()
         for channel in ctx.guild.channels:
             if channel.name.lower() == audio_name:
-                await ctx.respond(channel.mention, ephemeral=True)
+                await ctx.respond(channel.mention, ephemeral=private)
                 return
 
         await ctx.respond("No matching audio channel was found.", ephemeral=True)
