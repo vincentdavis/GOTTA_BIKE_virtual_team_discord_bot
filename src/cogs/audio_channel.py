@@ -19,10 +19,15 @@ class AudioChannel(commands.Cog):
             await ctx.respond("No matching audio channel was found.", ephemeral=True)
             return
 
-        audio_name = f"{ctx.channel.name}-audio".lower()
-        for channel in ctx.guild.channels:
-            if channel.name.lower() == audio_name:
-                await ctx.respond(channel.mention, ephemeral=private)
+        # If used in a thread, resolve to the parent channel
+        channel = ctx.channel
+        if isinstance(channel, discord.Thread) and channel.parent:
+            channel = channel.parent
+
+        text_name = channel.name.lower()
+        for ch in ctx.guild.voice_channels:
+            if text_name in ch.name.lower():
+                await ctx.respond(ch.mention, ephemeral=private)
                 return
 
         await ctx.respond("No matching audio channel was found.", ephemeral=True)
