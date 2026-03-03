@@ -56,6 +56,13 @@ class InChannel(commands.Cog):
             await ctx.respond("You need the Team Member role to use this command.", ephemeral=True)
             return
 
+        # If used in a thread, resolve to the parent channel
+        if isinstance(channel, discord.Thread):
+            channel = channel.parent
+            if channel is None:
+                await ctx.respond("Could not resolve the parent channel for this thread.", ephemeral=True)
+                return
+
         # Get members who can see this channel
         if not isinstance(channel, (discord.TextChannel, discord.VoiceChannel, discord.ForumChannel)):
             await ctx.respond("This command can only be used in text, voice, or forum channels.", ephemeral=True)
