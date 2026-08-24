@@ -36,6 +36,7 @@ docker run coalition-bot
 **Cog System:** All Discord commands are organized as cogs in `src/cogs/`:
 - `about.py` - `/help` command
 - `audio_channel.py` - `/audio_channel` command (find companion voice channel)
+- `connect_zwift.py` - `/connect_zwift` command (link to the app's Connect to Zwift page)
 - `config_manager.py` - Fetches bot configuration from Django API (channel IDs, welcome messages, etc.)
 - `diagnostics.py` - `/diag` debug command (DEBUG mode only)
 - `in_channel.py` - `/in_channel` filtered roster command (creates link showing only channel members)
@@ -51,6 +52,7 @@ docker run coalition-bot
 | Command | Permission | Notes |
 |---------|------------|-------|
 | `/audio_channel` | Everyone | |
+| `/connect_zwift` | Everyone | Plain link; the app's own login gates the page |
 | `/help` | Team Member | |
 | `/join_the_coalition` | Everyone | |
 | `/team_links` | Team Member | |

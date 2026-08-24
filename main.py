@@ -38,6 +38,7 @@ COGS = [
     "src.cogs.join_coalition",
     "src.cogs.welcome",
     "src.cogs.videos",
+    "src.cogs.connect_zwift",
 ]
 
 
