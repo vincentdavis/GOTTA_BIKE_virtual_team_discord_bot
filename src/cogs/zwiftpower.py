@@ -399,7 +399,7 @@ class ZwiftPower(commands.Cog):
                     results = data.get("results", [])
                     return [
                         discord.OptionChoice(
-                            name=f"{r['name']} ({r.get('flag', '')})",
+                            name=self._suggestion_label(r),
                             value=str(r["zwid"]),
                         )
                         for r in results
@@ -408,6 +408,27 @@ class ZwiftPower(commands.Cog):
             pass
 
         return []
+
+    @staticmethod
+    def _suggestion_label(result: dict) -> str:
+        """Build the autocomplete label for one search result.
+
+        The API returns ``alias`` when the rider was found by a name other than their
+        ZwiftPower one -- their Discord handle, real name, or Zwift Racing name. Showing
+        it explains why a suggestion appeared for text that is nowhere in the name.
+
+        Args:
+            result: One entry from the ``search_teammates`` response.
+
+        Returns:
+            A label within Discord's 100-character limit for a choice name.
+
+        """
+        label = f"{result['name']} ({result.get('flag', '')})"
+        alias = result.get("alias")
+        if alias:
+            label = f"{label} \u00b7 {alias}"
+        return label if len(label) <= 100 else label[:99] + "\u2026"
 
     @discord.slash_command(name="teammate_profile", description="View a teammate's Zwift racing profile")
     async def teammate_profile(
