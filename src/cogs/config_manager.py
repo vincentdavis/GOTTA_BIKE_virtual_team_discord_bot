@@ -153,6 +153,14 @@ class ConfigManager(commands.Cog):
         except httpx.RequestError as e:
             logfire.warning("Bot config fetch failed", error=str(e))
             return None
+        except Exception as e:
+            # A malformed body, an unexpected shape from the API, anything at all. Degrading
+            # here is safe because the caller keeps the previous config; letting it escape is
+            # not, because an unhandled exception inside a discord.py tasks.loop stops that
+            # loop for the lifetime of the process. That is how config refresh can go silent
+            # for months and then "fix itself" on the next restart.
+            logfire.error("Bot config fetch raised an unexpected error", error=str(e))
+            return None
 
     async def refresh_config(self) -> bool:
         """Refresh configuration from the API.
@@ -194,6 +202,24 @@ class ConfigManager(commands.Cog):
     async def before_periodic_refresh(self):
         """Wait until the bot is ready before starting periodic refresh."""
         await self.bot.wait_until_ready()
+
+    @periodic_config_refresh.error
+    async def on_periodic_refresh_error(self, error: BaseException):
+        """Restart the refresh loop rather than letting one failure end it.
+
+        Without a handler, discord.py logs the exception and stops the loop permanently --
+        reconnect=True covers Discord connection errors, not arbitrary ones. The bot then
+        keeps serving whatever configuration it last held, indefinitely, and the only symptom
+        is the absence of the hourly log line. Logged at error so a wedged loop is visible
+        rather than inferred from silence.
+
+        Args:
+            error: The exception that stopped the loop.
+
+        """
+        logfire.error("Config refresh loop stopped; restarting it", error=str(error))
+        if not self.periodic_config_refresh.is_running():
+            self.periodic_config_refresh.restart()
 
 
 def setup(bot: commands.Bot):
