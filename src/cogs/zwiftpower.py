@@ -404,7 +404,7 @@ class ZwiftPower(commands.Cog):
                         )
                         for r in results
                     ]
-        except httpx.TimeoutException, httpx.RequestError:
+        except (httpx.TimeoutException, httpx.RequestError):
             pass
 
         return []
