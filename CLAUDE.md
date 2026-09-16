@@ -31,7 +31,7 @@ docker run coalition-bot
 
 **Entry Point:** `main.py` - Configures logfire, loads environment, registers cogs, and starts the bot.
 
-**Bot Instance:** `src/bot.py` - Creates the Discord bot with `message_content` intent enabled.
+**Bot Instance:** `src/bot.py` - Creates the Discord bot with the `message_content` and `members` intents enabled. `members` (Server Members Intent) is privileged and must also be switched on in the Discord Developer Portal; it gives the full member cache and the member join/update/remove events. In py-cord 2.8.1 it is the only intent `GUILD_MEMBER_REMOVE` (`on_member_remove` / `on_raw_member_remove`) needs.
 
 **Cog System:** All Discord commands are organized as cogs in `src/cogs/`:
 - `about.py` - `/help` command
@@ -41,7 +41,7 @@ docker run coalition-bot
 - `diagnostics.py` - `/diag` debug command (DEBUG mode only)
 - `in_channel.py` - `/in_channel` filtered roster command (creates link showing only channel members)
 - `join_coalition.py` - `/join_the_coalition` membership application with multi-select form
-- `member_sync.py` - `/sync_members` command to sync guild members to Django
+- `member_sync.py` - Guild member state to Django: the full push (`/sync_members` and a periodic loop) and the leave hook (see Guild Member Sync below)
 - `role_sync.py` - Syncs Discord roles to Django API (`/sync_roles`, `/sync_my_roles`)
 - `team_links.py` - Magic link generation (`/team_links`)
 - `welcome.py` - Sends welcome message to new members, `/test_welcome` command, handles Join button
@@ -83,7 +83,15 @@ The `/join_the_coalition` command collects:
 **API Communication:** Cogs authenticate to the Django backend using headers:
 - `X-API-Key`: From `DBOT_AUTH_KEY` env var
 - `X-Guild-Id`: From `DISCORD_GUILD_ID` env var
-- `X-Discord-User-Id`: Requesting user's Discord ID
+- `X-Discord-User-Id`: Requesting user's Discord ID — the bot's own user ID for calls no person triggered (periodic loops, event listeners). The platform refuses an empty value
+
+### Guild Member Sync (`src/cogs/member_sync.py`)
+
+Two paths, each matching an endpoint on the platform:
+
+- **Full push** — `POST {DBOT_API_URL}/sync_guild_members` with `{"members": [...], "observed_at": "<ISO-8601 UTC>"}`, sent by `/sync_members` and every `MEMBER_SYNC_INTERVAL_HOURS` (default 6). `observed_at` is taken just before `guild.members` is read, with no `await` in between, so the platform can refuse to clear a departure stamped at or after it (a leave newer than the list). The push **never marks anyone as left** — the gateway cache can be missing chunks after a restart, so the platform only lets its own paginated REST sync decide departures. Its response carries `departures_evaluated: false`, and `/sync_members` then says so under the counts, because "Left: 0" is expected there. **No push while the gateway is not current**: py-cord keeps the member cache, and `is_ready()` stays True, through a disconnect, so a push then would list members who left while no events arrived, and clear any departure the platform recorded meanwhile. The cog tracks `_member_cache_current`. `on_disconnect` clears it. `on_resumed` sets it, because Discord replays every missed event before RESUMED, and so does `on_ready`, because READY clears the cache and `on_ready` follows the re-chunk. While the flag is clear, the periodic push is skipped (`MemberCacheNotCurrentError`, caught in the loop, since an exception would stop the `tasks.loop`) and `/sync_members` replies "reconnecting". The flag is checked inside `_sync_guild_members` with no `await` before the read. One residue remains: a connection that dies silently is only noticed after `heartbeat_timeout` (60s) without a gateway message.
+- **Leave hook** — `on_raw_member_remove` posts `POST {DBOT_API_URL}/member_left/{discord_id}` as soon as someone leaves the `DISCORD_GUILD_ID` guild (other guilds, and an unset guild ID, are ignored). The raw event is used because it fires even when the member was not cached; it also fires for kicks and bans, which are not told apart. The optional body `{username, display_name, avatar_hash, is_bot}` is only used by the platform to create a `GuildMember` row it does not have. Connection errors, timeouts and 5xx are retried (3 attempts in all, pausing 2s then 5s); a 4xx is final. The endpoint is idempotent (`status` is `departed` or `already_departed`), so a retry is safe, **except after a rejoin**: the platform stamps the departure when the request arrives, and a Discord login clears the stamp, so a late retry would sign a rejoined rider out again. So each attempt first checks `guild.get_member(id)` and stops if the member is back. py-cord removes the member from the cache before dispatching the remove event and adds them back on `GUILD_MEMBER_ADD`. The listener never raises: a leave that never gets through is logged as an error, and the platform's scheduled guild sync records it later.
+- **Logging** — ids and status codes only (`discord_id`, `guild_id`, `status_code`), never usernames, display names or response bodies (a validation error can echo what was sent). This is the platform's privacy rule, and the bot's traces land in the same Logfire organisation.
 
 ## Discord Components V2 (Modals with Select Menus)
 
@@ -159,6 +167,7 @@ Optional:
 - `LOGFIRE_TOKEN` - Logfire write token for production (get from logfire.pydantic.dev)
 - `LOGFIRE_ENVIRONMENT` - Logfire environment name (default: `development`)
 - `NEW_ARRIVALS_CHANNEL_ID` - Channel ID where welcome messages are sent to new members
+- `MEMBER_SYNC_INTERVAL_HOURS` - Hours between full member pushes (default: `6`)
 
 ## Code Style
 

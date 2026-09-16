@@ -49,6 +49,14 @@ The bot automatically syncs Discord roles to the Django backend:
 - Syncs user roles when they change
 - Runs periodic sync every hour
 
+### Guild Member Sync
+
+The bot keeps the Django backend's member list current:
+- Pushes every member of the configured guild on `/sync_members` and every `MEMBER_SYNC_INTERVAL_HOURS` (default 6). The push includes an `observed_at` timestamp and never marks anybody as left. It is skipped while the bot is reconnecting to Discord, because the member list may be out of date until the connection resumes.
+- Reports a member leaving the configured guild as it happens (`POST /member_left/{discord_id}`). Connection errors and server errors are retried, but not once the member has rejoined. The backend's own scheduled sync catches any leave that does not get through. Kicks and bans are reported the same way.
+
+Both need the **Server Members Intent**, a privileged intent: enable it for the bot in the Discord Developer Portal (the bot requests it in `src/bot.py`). No other intent is needed for the leave events.
+
 ## Requirements
 
 - Python 3.14+
@@ -103,6 +111,7 @@ docker run --env-file .env coalition-bot
 | `TEAM_MEMBER_ROLE_ID` | No | Role ID for Team Member commands (if not set, all users can access) | - |
 | `APP_LOGIN_URL` | No | URL to the app login/signup page (fetched from API if not set) | - |
 | `NEW_ARRIVALS_CHANNEL_ID` | No | Channel ID for welcome/new arrival messages | - |
+| `MEMBER_SYNC_INTERVAL_HOURS` | No | Hours between full guild member pushes | `6` |
 | `DEBUG` | No | Enable debug mode for `/diag` command | `false` |
 | `LOGFIRE_TOKEN` | No | Logfire write token for production | - |
 | `LOGFIRE_ENVIRONMENT` | No | Logfire environment name | `development` |
@@ -120,7 +129,7 @@ docker run --env-file .env coalition-bot
 │       ├── diagnostics.py    # /diag debug command
 │       ├── in_channel.py     # /in_channel filtered roster command
 │       ├── join_coalition.py # /join_the_coalition membership application
-│       ├── member_sync.py    # /sync_members command
+│       ├── member_sync.py    # /sync_members, periodic member push, member-leave hook
 │       ├── role_sync.py      # Role syncing commands and listeners
 │       ├── team_links.py     # Magic link generation
 │       ├── welcome.py        # Welcome messages, /test_welcome command
@@ -138,7 +147,7 @@ The bot authenticates to the Django backend using HTTP headers:
 |--------|-------------|
 | `X-API-Key` | API authentication key from `DBOT_AUTH_KEY` |
 | `X-Guild-Id` | Guild ID from `DISCORD_GUILD_ID` |
-| `X-Discord-User-Id` | Requesting user's Discord ID |
+| `X-Discord-User-Id` | Requesting user's Discord ID, or the bot's own ID for calls no person triggered (periodic syncs, the member-leave hook) |
 
 ## Development
 
